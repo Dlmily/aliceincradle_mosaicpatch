@@ -1,1 +1,184 @@
-
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>战斗</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='battle.css') }}">
+    <script src="{{ url_for('static', filename='battle.js') }}"></script>
+</head>
+<body>
+    <div class="game-container">
+        <button class="sidebar-toggle" onclick="toggleSidebar()">≡</button>
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>巫师状态</h2>
+            </div>
+            <div class="stats">
+                <div class="stat">
+                    <span class="stat-label">姓名: {{ character.name }}</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">性别: {{ character.gender }}</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">年级: {{ game_state.grade }}</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">生命值:</span>
+                    <div class="stat-bar"><div class="stat-value" style="width: {{ stats.health }}%; background-color: #c41e3a;"></div></div>
+                    <span class="stat-number">{{ stats.health }}/100</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">理智值:</span>
+                    <div class="stat-bar"><div class="stat-value" style="width: {{ stats.san }}%; background-color: #1e90ff;"></div></div>
+                    <span class="stat-number">{{ stats.san }}/100</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">疲劳值:</span>
+                    <div class="stat-bar"><div class="stat-value" style="width: {{ stats.fatigue }}%; background-color: #ffd700;"></div></div>
+                    <span class="stat-number">{{ stats.fatigue }}/100</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">加隆: {{ stats.galleons }}</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">西可: {{ stats.sickle }}</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">纳特: {{ stats.knut }}</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">时间: {{ stats.time }}</span>
+                </div>
+            </div>
+            <div class="inventory-section">
+                <h3>装备</h3>
+                <ul class="inventory">
+                    <li>手部: {% if equipment.hand %}{{ equipment.hand }}{% else %}空{% endif %}</li>
+                    <li>身体: {% if equipment.body %}{{ equipment.body }}{% else %}空{% endif %}</li>
+                </ul>
+            </div>
+            <div class="inventory-section">
+                <button class="inventory-button" onclick="openModal('inventoryModal')">🎒 查看物品</button>
+                <button class="spells-button" onclick="openModal('spellsModal')">📜 查看所学咒语</button>
+                <button class="achievements-button" onclick="openAchievementsModal()">🏆 查看成就</button>
+            </div>
+            {% if debug_mode %}
+            <div class="sidebar-section">
+                <h3>开发者快速旅行</h3>
+                <ul class="locations">
+                    {% for scene_id in all_scene_ids %}
+                    <li><a href="{{ url_for('navigate', scene_id=scene_id) }}">{{ scene_id }}</a></li>
+                    {% endfor %}
+                </ul>
+                <button class="dev-button" onclick="reloadScenes()">🔄 重新加载场景</button>
+                <button class="dev-button" onclick="gainAllSpells()">🪄 获得所有咒语</button>
+                <button class="dev-button" onclick="restoreStats()">🩺 恢复状态</button>
+            </div>
+            {% endif %}
+        </div>
+        <div class="main-content">
+            <h1 class="scene-title">战斗：{{ enemy.name }}</h1>
+            {% if event_message %}
+            <div class="event-message">{{ event_message }}</div>
+            {% endif %}
+            {% if battle_log %}
+            <div class="event-message">{{ battle_log[-1] }}</div>
+            {% endif %}
+            <div class="scene-description">
+                你正面对 {{ enemy.name }}，准备战斗！
+            </div>
+            {% if enemy.image %}
+            <div class="scene-image">
+                <img src="{{ url_for('static', filename='images/' + enemy.image) }}" alt="敌人图片">
+            </div>
+            {% endif %}
+            <div class="stat">
+                <span class="stat-label">敌人血量: {{ enemy.health }}/{{ enemy.max_health }}</span>
+            </div>
+            <div class="battle-actions">
+                <h2>选择战斗技能（最多3个）</h2>
+                <div id="skillsContainer" class="items-container"></div>
+                <div class="pagination">
+                    <button class="pagination-button" onclick="prevSkillsPage()" id="prevSkillsButton">上一页</button>
+                    <button class="pagination-button" onclick="nextSkillsPage()" id="nextSkillsButton">下一页</button>
+                </div>
+                <div class="action-buttons">
+                    <button class="confirm-button" onclick="confirmSkillsSelection()">确认选择</button>
+                </div>
+            </div>
+            <div class="choices">
+                {% for choice in battle_choices %}
+                <form action="{{ url_for('battle_choose') }}" method="POST">
+                    <input type="hidden" name="choice" value="{{ loop.index0 }}">
+                    <button type="submit" class="choice-button">
+                        {{ choice.text }}
+                        {% if choice.time %}
+                        <span class="time-cost">{{ choice.time }}分钟</span>
+                        {% endif %}
+                    </button>
+                </form>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div id="inventoryModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('inventoryModal')">&times;</span>
+            <h2>你的物品</h2>
+            <div class="container-tabs">
+                <button class="tab-button active" onclick="showTab('inventory')">背包物品</button>
+            </div>
+            <div id="inventory" class="items-container" style="display: grid;"></div>
+            <div class="inventory-stats">
+                背包容量: {{ inventory.values()|sum if inventory else 0 }}/10
+            </div>
+            <div class="modal-footer">
+                <button class="modal-close-button" onclick="closeModal('inventoryModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+    <div id="containerModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('containerModal')">&times;</span>
+            <h2>管理容器</h2>
+            <div class="container-tabs">
+                <button class="tab-button" onclick="showTab('trunk-items')">容器中的物品</button>
+                <button class="tab-button active" onclick="showTab('inventory-items')">背包物品</button>
+            </div>
+            <div id="trunk-items" class="items-container" style="display: none;"></div>
+            <div id="inventory-items" class="items-container" style="display: grid;"></div>
+            <div class="modal-footer">
+                <button class="modal-close-button" onclick="closeModal('containerModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+    <div id="spellsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('spellsModal')">&times;</span>
+            <h2>所学咒语</h2>
+            <div id="spells-list" class="items-container"></div>
+            <div class="pagination">
+                <button class="pagination-button" onclick="prevPage()">上一页</button>
+                <span id="spells-page-info"></span>
+                <button class="pagination-button" onclick="nextPage()">下一页</button>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-close-button" onclick="closeModal('spellsModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+    <div id="achievementsModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('achievementsModal')">&times;</span>
+        <h2>已获得的成就</h2>
+        <div class="items-container" id="achievements-list">
+            <div class="empty-message">加载中...</div>
+        </div>
+        <div class="modal-footer">
+            <button class="modal-close-button" onclick="closeModal('achievementsModal')">关闭</button>
+        </div>
+    </div>
+</div>
+</body>
+</html>
