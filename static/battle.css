@@ -1,0 +1,200 @@
+/* static/battle.css */
+@import url('style.css');
+
+/* 战斗区域布局 */
+.battle-area {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin: 30px 0;
+    padding: 20px;
+    background-color: rgba(20, 25, 45, 0.7);
+    border-radius: 8px;
+    border: 1px solid #5d8aa8;
+}
+
+.player-area, .enemy-area {
+    width: 40%;
+    text-align: center;
+}
+
+.vs {
+    font-size: 2rem;
+    color: #d4af37;
+    font-weight: bold;
+}
+
+.character-card, .enemy-card {
+    background-color: rgba(10, 15, 30, 0.7);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #8b4513;
+}
+
+.character-card h3, .enemy-card h3 {
+    color: #d4af37;
+    margin-bottom: 15px;
+}
+
+.character-card img, .enemy-card img {
+    max-width: 150px;
+    max-height: 200px;
+    border-radius: 8px;
+    border: 2px solid #8b4513;
+    margin: 15px 0;
+}
+
+.health-bar {
+    height: 20px;
+    background-color: #333;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 10px 0;
+    position: relative;
+}
+
+.health {
+    height: 100%;
+    background-color: #c41e3a;
+    transition: width 0.5s;
+}
+
+.health-bar span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.8rem;
+    color: white;
+    text-shadow: 1px 1px 1px black;
+}
+
+/* 战斗日志 */
+.battle-log {
+    background-color: rgba(20, 25, 45, 0.7);
+    padding: 15px;
+    margin-bottom: 25px;
+    border-radius: 8px;
+    border: 1px solid #5d8aa8;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.battle-log h3 {
+    color: #d4af37;
+    margin-bottom: 10px;
+}
+
+.battle-log p {
+    font-size: 1rem;
+    color: #e6e6e6;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #3a3a5a;
+}
+
+/* 战斗动作区域 */
+.battle-actions {
+    margin-top: 30px;
+    background-color: rgba(20, 25, 45, 0.7);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #5d8aa8;
+}
+
+.battle-actions h2 {
+    color: #d4af37;
+    margin-bottom: 15px;
+}
+
+.items-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 15px;
+    margin: 15px 0;
+}
+
+.inventory-item {
+    background-color: rgba(10, 15, 30, 0.7);
+    border: 1px solid #5d8aa8;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.inventory-item:hover {
+    background-color: rgba(139, 69, 19, 0.3);
+    transform: translateY(-3px);
+}
+
+.item-icon {
+    font-size: 2rem;
+    margin-bottom: 5px;
+}
+
+.item-name {
+    font-size: 0.9rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #e6e6e6;
+}
+
+.item-description {
+    font-size: 0.8rem;
+    color: #b0b0b0;
+    font-style: italic;
+}
+
+.item-actions {
+    margin-top: 10px;
+}
+
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.action-button, .confirm-button {
+    padding: 12px 20px;
+    background-color: rgba(139, 69, 19, 0.7);
+    color: #f0e68c;
+    border: 2px solid #d4af37;
+    border-radius: 6px;
+    font-family: 'Cinzel', serif;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.action-button:hover, .confirm-button:hover {
+    background-color: rgba(212, 175, 55, 0.3);
+    transform: translateY(-2px);
+}
+
+.confirm-button {
+    background-color: rgba(0, 100, 0, 0.7);
+    border-color: #32cd32;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.pagination-button {
+    padding: 8px 16px;
+    background-color: rgba(20, 25, 45, 0.7);
+    color: #f0e68c;
+    border: 1px solid #5d8aa8;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.pagination-button:disabled {
+    background-color: rgba(50, 50, 50, 0.5);
+    cursor: not-allowed;
+}
