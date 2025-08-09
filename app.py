@@ -377,16 +377,40 @@ def choose():
         return redirect(url_for('game'))
     
     choice = current_scene['choices'][choice_index]
+    # 默认下一场景为选项中的 next，可在分院时覆盖
+    next_scene_id = choice.get('next', current_scene_id)
 
     # 分院场景：在选择时随机分配学院
     if current_scene_id == 'sorting' and not game_state['character'].get('house'):
         assigned = random.choice(HOUSES)
         game_state['character']['house'] = assigned
-        session['action_event'] = f"分院结果：你被分到{assigned}！"
+
+        # 学院效果说明
+        effects_map = {
+            '格兰芬多': '寻找到随机事件(只包含随机触发战斗、对话，和解锁场景)的概率提高10%，并使疲劳值上限+20',
+            '斯莱特林': '造成的伤害提高10%，并使获得加隆&西可&纳特的数量随机增加(不超过10)',
+            '拉文克劳': '获得新咒语的概率和成功炼出魔药的概率提高10%，并使理智值上限+20',
+            '赫奇帕奇': '获得的好感度提升10%，减少的理智值和增加的疲劳值降低15%，并使生命值上限+20'
+        }
+        # 学院对应宿舍
+        dorm_map = {
+            '格兰芬多': 'dormitory',
+            '斯莱特林': 'dormitory_slytherin',
+            '拉文克劳': 'dormitory_ravenclaw',
+            '赫奇帕奇': 'dormitory_hufflepuff'
+        }
+        dorm_id = dorm_map.get(assigned, 'dormitory')
+
+        # 设置事件消息（包含学院效果说明）
+        session['action_event'] = f"分院结果：你被分到{assigned}！{effects_map.get(assigned, '')}"
+
         # 分院后解锁宿舍、礼堂等基础场景
-        for sid in ['dormitory', 'great_hall', 'corridor']:
+        for sid in [dorm_id, 'great_hall', 'corridor']:
             if sid not in game_state['unlocked_scenes']:
                 game_state['unlocked_scenes'].append(sid)
+
+        # 分院后直接前往对应宿舍
+        next_scene_id = dorm_id
 
     if choice.get('type') == 'talk':
         talk_id = random.choice(choice['talk_files'])
@@ -529,7 +553,7 @@ def choose():
             else:
                 game_state['stats'][stat] = clamp_with_caps(game_state, stat, current + delta)
     
-    game_state['current_scene'] = choice['next']
+    game_state['current_scene'] = next_scene_id
     
     if game_state['current_scene'] not in game_state['visited']:
         game_state['visited'].append(game_state['current_scene'])
