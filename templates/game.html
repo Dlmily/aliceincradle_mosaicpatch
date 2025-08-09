@@ -117,7 +117,7 @@
             {% endif %}
             
             {% if is_talk %}
-            <div class="choices">
+            <div class="talk-container">
                 {% for dialogue in current_talk_node %}
                     {% if dialogue.people %}
                     <div class="dialogue">{{ dialogue.people }}: {{ dialogue.chat }}</div>
