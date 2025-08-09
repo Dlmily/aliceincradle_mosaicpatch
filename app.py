@@ -4,6 +4,7 @@ import random
 import copy
 from datetime import datetime, timedelta
 from flask import Flask, render_template, session, redirect, url_for, request, jsonify
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
@@ -90,46 +91,70 @@ def load_achievements():
     return achievements_cache
 
 def load_scenes():
-    """加载所有场景"""
+    """加载所有场景（并发，最多6个并行）"""
     global scenes_cache
     scenes_cache = {}
-    
+
     if not os.path.exists(SCENES_DIR):
         os.makedirs(SCENES_DIR)
         print(f"Created scenes directory: {SCENES_DIR}")
         return
-    
-    for filename in os.listdir(SCENES_DIR):
-        if filename.endswith('.json'):
-            scene_id = filename[:-5]
-            filepath = os.path.join(SCENES_DIR, filename)
+
+    filenames = [filename for filename in os.listdir(SCENES_DIR) if filename.endswith('.json')]
+    if not filenames:
+        return
+
+    def _load_scene_file(filename: str):
+        filepath = os.path.join(SCENES_DIR, filename)
+        with open(filepath, 'r', encoding='utf-8') as f:
+            return filename[:-5], json.load(f)
+
+    loaded_scenes = {}
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        future_to_filename = {executor.submit(_load_scene_file, filename): filename for filename in filenames}
+        for future in as_completed(future_to_filename):
+            filename = future_to_filename[future]
             try:
-                with open(filepath, 'r', encoding='utf-8') as f:
-                    scenes_cache[scene_id] = json.load(f)
+                scene_id, data = future.result()
+                loaded_scenes[scene_id] = data
                 print(f"Loaded scene: {scene_id}")
             except Exception as e:
-                raise Exception(f"Error loading scene {scene_id}: {str(e)}")
+                raise Exception(f"Error loading scene {filename[:-5]}: {str(e)}")
+
+    scenes_cache = loaded_scenes
 
 def load_talks():
-    """加载所有对话事件"""
+    """加载所有对话事件（并发，最多6个并行）"""
     global talk_cache
     talk_cache = {}
-    
+
     if not os.path.exists(TALK_DIR):
         os.makedirs(TALK_DIR)
         print(f"Created talk directory: {TALK_DIR}")
         return
-    
-    for filename in os.listdir(TALK_DIR):
-        if filename.endswith('.json'):
-            talk_id = filename[:-5]
-            filepath = os.path.join(TALK_DIR, filename)
+
+    filenames = [filename for filename in os.listdir(TALK_DIR) if filename.endswith('.json')]
+    if not filenames:
+        return
+
+    def _load_talk_file(filename: str):
+        filepath = os.path.join(TALK_DIR, filename)
+        with open(filepath, 'r', encoding='utf-8') as f:
+            return filename[:-5], json.load(f)
+
+    loaded_talks = {}
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        future_to_filename = {executor.submit(_load_talk_file, filename): filename for filename in filenames}
+        for future in as_completed(future_to_filename):
+            filename = future_to_filename[future]
             try:
-                with open(filepath, 'r', encoding='utf-8') as f:
-                    talk_cache[talk_id] = json.load(f)
+                talk_id, data = future.result()
+                loaded_talks[talk_id] = data
                 print(f"Loaded talk: {talk_id}")
             except Exception as e:
-                raise Exception(f"Error loading talk {talk_id}: {str(e)}")
+                raise Exception(f"Error loading talk {filename[:-5]}: {str(e)}")
+
+    talk_cache = loaded_talks
 
 def get_scene(scene_id):
     """获取场景数据"""
