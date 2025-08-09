@@ -448,6 +448,11 @@ def battle():
     enemy = game_state['battle']['enemy']
     battle_log = game_state['battle']['battle_log']
     
+    # Ensure defense_bonus exists to avoid template KeyErrors
+    if 'defense_bonus' not in game_state['battle'] or not isinstance(game_state['battle']['defense_bonus'], dict):
+        game_state['battle']['defense_bonus'] = {'amount': 0, 'duration': 0}
+        session['game_state'] = game_state
+
     return render_template('battle.html',
                          game_state=game_state,
                          enemy=enemy,
@@ -509,6 +514,15 @@ def perform_battle_round():
     player_stats = game_state['stats']
     battle_log = game_state['battle']['battle_log']
     
+    # Ensure required battle keys exist
+    battle_state = game_state.setdefault('battle', {})
+    if not isinstance(battle_state.get('defense_bonus'), dict):
+        battle_state['defense_bonus'] = {'amount': 0, 'duration': 0}
+    if not isinstance(battle_state.get('persistent_damage'), dict):
+        battle_state['persistent_damage'] = {'damage': 0, 'duration': 0}
+    if not isinstance(battle_state.get('buff'), dict):
+        battle_state['buff'] = {'attack_boost': 0, 'duration': 0}
+
     # 应用持续伤害
     if game_state['battle']['persistent_damage']['duration'] > 0:
         damage = game_state['battle']['persistent_damage']['damage']
