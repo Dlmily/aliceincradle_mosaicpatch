@@ -101,8 +101,12 @@
         <div class="main-content">
             <h1 class="scene-title">{{ scene.title }}</h1>
             
-            {% if event_message %}
-            <div class="event-message">{{ event_message }}</div>
+            {% if event_messages %}
+            <div class="event-messages">
+                {% for em in event_messages %}
+                <div class="event-message">{{ em }}</div>
+                {% endfor %}
+            </div>
             {% endif %}
             
             <div class="scene-description">{{ scene.description }}</div>
