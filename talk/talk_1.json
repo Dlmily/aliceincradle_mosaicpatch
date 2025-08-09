@@ -1,1 +1,27 @@
-
+{
+    "title": "与神秘学生的对话",
+    "description": "你在走廊上与一个神秘的学生交谈，他似乎知道一些秘密。",
+    "dialogue": {
+        "1-1": [
+            { "people": "神秘学生", "chat": "（低声）「你有没有听说过密室的传闻？」" },
+            { "people": "", "chat": "你感到一丝好奇，但也有些不安。" },
+            {
+                "type": "choice",
+                "question": "你要如何回应？",
+                "choices": [
+                    { "text": "询问更多关于密室的信息", "next": "1-2", "effect": {"fatigue": 10}},
+                    { "text": "礼貌地结束对话", "next": "end" }
+                ]
+            }
+        ],
+        "1-2": [
+            { "people": "神秘学生", "chat": "「据说密室藏在城堡深处，只有真正的继承人能打开它。」" },
+            { "people": "", "chat": "（你的心跳加速，决定以后再调查。）" },
+            { "type": "end", "next_scene": "corridor" }
+        ],
+        "end": [
+            { "people": "", "chat": "你礼貌地告别，结束了对话。" },
+            { "type": "end", "next_scene": "corridor" }
+        ]
+    }
+}
