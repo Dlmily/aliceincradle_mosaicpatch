@@ -11,6 +11,9 @@ app.secret_key = 'your_secret_key_here'
 # 调试模式设置
 DEBUG_MODE = True
 
+# 学院常量
+HOUSES = ['格兰芬多', '斯莱特林', '拉文克劳', '赫奇帕奇']
+
 # 场景目录
 SCENES_DIR = 'scenes'
 # 对话目录
@@ -177,6 +180,41 @@ def count_items(item_dict):
 def set_initial_currency():
     return {'galleons': random.randint(20, 50), 'sickle': random.randint(50, 100), 'knut': random.randint(100, 200)}
 
+# 计算各属性上限（受学院影响）
+def compute_stat_caps(game_state):
+    caps = {'health': 100, 'san': 100, 'fatigue': 100, 'defense': 50}
+    try:
+        house = (game_state or {}).get('character', {}).get('house')
+    except Exception:
+        house = None
+    if house == '格兰芬多':
+        caps['fatigue'] += 20
+    elif house == '拉文克劳':
+        caps['san'] += 20
+    elif house == '赫奇帕奇':
+        caps['health'] += 20
+    return caps
+
+# 将数值限制在 [0, 上限]
+def clamp_with_caps(game_state, stat, value):
+    caps = compute_stat_caps(game_state)
+    if stat == 'defense':
+        cap = caps['defense']
+    elif stat in ('health', 'san', 'fatigue'):
+        cap = caps[stat]
+    else:
+        # 对非受上限影响的状态（货币、时间等）不做上限裁剪
+        cap = None
+    try:
+        v = int(round(value))
+    except Exception:
+        v = value
+    if isinstance(v, int):
+        if cap is None:
+            return max(v, 0)
+        return min(max(v, 0), cap)
+    return v
+
 # 应用启动时加载所有场景、对话、咒语、敌人和成就
 load_scenes()
 load_talks()
@@ -209,12 +247,14 @@ def init_game_state(name, gender):
     
     initial_state['character'] = {
         'name': name,
-        'gender': gender
+        'gender': gender,
+        'house': None
     }
     
-    initial_state['current_scene'] = 'dormitory'
-    initial_state['visited'] = ['dormitory']
-    initial_state['unlocked_scenes'] = ['dormitory']
+    # 初始进入分院场景
+    initial_state['current_scene'] = 'sorting'
+    initial_state['visited'] = ['sorting']
+    initial_state['unlocked_scenes'] = ['sorting']
     initial_state['previous_state'] = None
     initial_state['current_talk'] = None
     initial_state['current_talk_node'] = None
@@ -279,6 +319,7 @@ def game():
     } for sid in scene_ids_for_debug]
     
     can_undo = game_state['previous_state'] is not None
+    caps = compute_stat_caps(game_state)
     
     if game_state.get('current_talk') and game_state.get('current_talk_node'):
         talk_data = get_talk(game_state['current_talk'])
@@ -299,7 +340,8 @@ def game():
                              can_undo=can_undo,
                              is_gryffindor_dorm=is_gryffindor_dorm,
                              is_talk=True,
-                             current_talk_node=current_node)
+                             current_talk_node=current_node,
+                             caps=caps)
 
     return render_template('game.html',
                          game_state=game_state,
@@ -316,7 +358,8 @@ def game():
                          current_scene_id=current_scene_id,
                          can_undo=can_undo,
                          is_gryffindor_dorm=is_gryffindor_dorm,
-                         is_talk=False)
+                         is_talk=False,
+                         caps=caps)
 
 # 处理玩家选择
 @app.route('/choose', methods=['POST'])
@@ -334,7 +377,17 @@ def choose():
         return redirect(url_for('game'))
     
     choice = current_scene['choices'][choice_index]
-    
+
+    # 分院场景：在选择时随机分配学院
+    if current_scene_id == 'sorting' and not game_state['character'].get('house'):
+        assigned = random.choice(HOUSES)
+        game_state['character']['house'] = assigned
+        session['action_event'] = f"分院结果：你被分到{assigned}！"
+        # 分院后解锁宿舍、礼堂等基础场景
+        for sid in ['dormitory', 'great_hall', 'corridor']:
+            if sid not in game_state['unlocked_scenes']:
+                game_state['unlocked_scenes'].append(sid)
+
     if choice.get('type') == 'talk':
         talk_id = random.choice(choice['talk_files'])
         game_state['current_talk'] = talk_id
@@ -346,7 +399,25 @@ def choose():
     item_messages = []
     if 'random_events' in choice:
         for event in choice.get('random_events', []):
-            if random.random() < event['chance']:
+            # 学院影响随机事件概率
+            house = game_state['character'].get('house')
+            eff_chance = float(event.get('chance', 0))
+            # 格兰芬多：只提升战斗/对话/解锁场景类事件
+            is_battle = 'next' in event and isinstance(event['next'], str) and 'battle' in event['next']
+            is_talk = event.get('type') == 'talk' or 'talk' in event or (isinstance(event.get('next'), str) and 'talk' in event.get('next', ''))
+            is_unlock = 'unlock_scene' in event
+            if house == '格兰芬多' and (is_battle or is_talk or is_unlock):
+                eff_chance = min(1.0, eff_chance + 0.1)
+            # 拉文克劳：获得新咒语 & 成功炼药概率 +10%
+            if house == '拉文克劳':
+                if 'spell' in event:
+                    eff_chance = min(1.0, eff_chance + 0.1)
+                if current_scene_id == 'potions':
+                    # 仅提升带有“成功”字样的事件
+                    if isinstance(event.get('event'), str) and ('成功' in event['event']):
+                        eff_chance = min(1.0, eff_chance + 0.1)
+            
+            if random.random() < eff_chance:
                 action_event = event['event']
                 if 'next' in event and 'battle' in event['next']:
                     enemy_name = event.get('enemy')
@@ -365,10 +436,36 @@ def choose():
                             session['action_event'] = f"未找到敌人：{enemy_name}"
                     else:
                         session['action_event'] = "随机事件中未指定敌人"
+                # 解锁场景
+                if 'unlock_scene' in event:
+                    unlock_id = event['unlock_scene']
+                    if unlock_id not in game_state['unlocked_scenes']:
+                        game_state['unlocked_scenes'].append(unlock_id)
+                        # 首次加入访问列表标题提示
+                        try:
+                            title = get_scene(unlock_id).get('title', unlock_id)
+                        except Exception:
+                            title = unlock_id
+                        session['action_event'] = (action_event + '；' if action_event else '') + f"解锁了场景：{title}"
                 # 处理其他事件（物品、效果等）
                 if 'effect' in event:
                     for key, value in event['effect'].items():
-                        game_state['stats'][key] = min(max(game_state['stats'][key] + value, 0), 100)
+                        delta = value
+                        # 赫奇帕奇：减少的理智值和增加的疲劳值降低15%
+                        if game_state['character'].get('house') == '赫奇帕奇':
+                            if key == 'san' and delta < 0:
+                                delta = int(round(delta * 0.85))
+                            if key == 'fatigue' and delta > 0:
+                                delta = int(round(delta * 0.85))
+                        # 斯莱特林：获得货币随机增加（0~10）
+                        if game_state['character'].get('house') == '斯莱特林' and key in ('galleons', 'sickle', 'knut') and delta > 0:
+                            delta += random.randint(0, 10)
+                        new_val = game_state['stats'].get(key, 0) + delta
+                        game_state['stats'][key] = clamp_with_caps(game_state, key, new_val)
+                if 'spell' in event:
+                    spell_name = event['spell']
+                    if spell_name not in game_state['known_spells']:
+                        game_state['known_spells'].append(spell_name)
                 if 'item' in event:
                     item = event['item']
                     quantity = 1
@@ -417,10 +514,20 @@ def choose():
     if 'effect' in choice:
         for stat, value in choice['effect'].items():
             current = game_state['stats'].get(stat, 0)
+            delta = value
+            # 赫奇帕奇：减少的理智值和增加的疲劳值降低15%
+            if game_state['character'].get('house') == '赫奇帕奇':
+                if stat == 'san' and delta < 0:
+                    delta = int(round(delta * 0.85))
+                if stat == 'fatigue' and delta > 0:
+                    delta = int(round(delta * 0.85))
+            # 斯莱特林：获得货币随机增加（0~10）
+            if game_state['character'].get('house') == '斯莱特林' and stat in ('galleons', 'sickle', 'knut') and delta > 0:
+                delta += random.randint(0, 10)
             if stat == 'defense':
-                game_state['stats'][stat] = max(0, min(50, int(round(current + value))))
+                game_state['stats'][stat] = max(0, min(50, int(round(current + delta))))
             else:
-                game_state['stats'][stat] = min(max(int(round(current + value)), 0), 100)
+                game_state['stats'][stat] = clamp_with_caps(game_state, stat, current + delta)
     
     game_state['current_scene'] = choice['next']
     
@@ -468,6 +575,7 @@ def battle():
         'id': sid,
         'title': get_scene(sid).get('title', sid)
     } for sid in get_all_scene_ids()]
+    caps = compute_stat_caps(game_state)
     return render_template('battle.html',
                          game_state=game_state,
                          enemy=enemy,
@@ -479,7 +587,8 @@ def battle():
                          character=game_state['character'],
                          event_message=session.pop('action_event', None),
                          debug_mode=DEBUG_MODE,
-                         debug_scenes=debug_scenes)
+                         debug_scenes=debug_scenes,
+                         caps=caps)
 
 # 处理战斗选择
 @app.route('/battle_choose', methods=['POST'])
@@ -626,6 +735,12 @@ def apply_skill_effect(skill, target_stats):
             delta = int(round(delta))
         except Exception:
             pass
+        # 赫奇帕奇：减少的理智值和增加的疲劳值降低15%
+        if game_state and game_state.get('character', {}).get('house') == '赫奇帕奇':
+            if stat == 'san' and delta < 0:
+                delta = int(round(delta * 0.85))
+            if stat == 'fatigue' and delta > 0:
+                delta = int(round(delta * 0.85))
         # 仅当作用于生命值的负向效果时考虑玩家总防御（包含临时防御），使用公式：
         # 最终伤害 = 怪物攻击力 × (1 - 玩家防御力 / (玩家防御力 + 100))
         if stat == 'health' and delta < 0 and game_state and target_stats is game_state['stats']:
@@ -638,7 +753,9 @@ def apply_skill_effect(skill, target_stats):
             reduction_ratio = 1 - (total_defense / float(total_defense + 100)) if (total_defense + 100) != 0 else 1.0
             final_damage = int(round(raw_attack * reduction_ratio))
             delta = -final_damage
-        target_stats[stat] = min(max(int(round(target_stats[stat] + delta)), 0), 100)
+        # 使用上限裁剪
+        new_val = target_stats.get(stat, 0) + delta
+        target_stats[stat] = clamp_with_caps(game_state, stat, new_val)
 
 def apply_player_skill_effect(skill, enemy, grade, battle_log):
     game_state = session['game_state']
@@ -648,6 +765,9 @@ def apply_player_skill_effect(skill, enemy, grade, battle_log):
         grade_bonus = grade * 0.05
         buff_bonus = game_state['battle']['buff']['attack_boost'] if game_state['battle']['buff']['duration'] > 0 else 0
         raw_attack = base_damage * (1 + grade_bonus + buff_bonus)
+        # 斯莱特林：造成伤害提高10%
+        if game_state['character'].get('house') == '斯莱特林':
+            raw_attack = raw_attack * (1 + 0.10)
         enemy_defense = max(0, int(enemy.get('defense', 0)))
         # 最终伤害 = 魔咒攻击力 × (1 - 怪物的防御力 / (怪物的防御力 + 300))
         reduction_ratio = 1 - (enemy_defense / float(enemy_defense + 300)) if (enemy_defense + 300) != 0 else 1.0
@@ -674,15 +794,16 @@ def apply_player_skill_effect(skill, enemy, grade, battle_log):
         boost = skill['effect']['attack_boost']
         duration = skill['effect']['duration']
         game_state['battle']['buff'] = {'attack_boost': boost, 'duration': duration}
-        battle_log.append(f"你的攻击力增加了 {boost*100}%，持续 {duration} 回合！")
+        battle_log.append(f"你的攻击力增加了 {boost*100}% ，持续 {duration} 回合！")
 
 @app.route('/restore_stats', methods=['POST'])
 def restore_stats():
     if not DEBUG_MODE:
         return jsonify({'message': '调试模式未启用'})
     game_state = session['game_state']
-    game_state['stats']['health'] = 100
-    game_state['stats']['san'] = 100
+    caps = compute_stat_caps(game_state)
+    game_state['stats']['health'] = caps['health']
+    game_state['stats']['san'] = caps['san']
     game_state['stats']['fatigue'] = 0
     session['game_state'] = game_state
     return jsonify({'message': '状态已恢复！'})
@@ -710,10 +831,20 @@ def talk_choose():
     if 'effect' in chosen_option:
         for stat, value in chosen_option['effect'].items():
             current = game_state['stats'].get(stat, 0)
+            delta = value
+            # 赫奇帕奇：减少的理智值和增加的疲劳值降低15%
+            if game_state['character'].get('house') == '赫奇帕奇':
+                if stat == 'san' and delta < 0:
+                    delta = int(round(delta * 0.85))
+                if stat == 'fatigue' and delta > 0:
+                    delta = int(round(delta * 0.85))
+            # 斯莱特林：获得货币随机增加（0~10）
+            if game_state['character'].get('house') == '斯莱特林' and stat in ('galleons', 'sickle', 'knut') and delta > 0:
+                delta += random.randint(0, 10)
             if stat == 'defense':
-                game_state['stats'][stat] = max(0, min(50, int(round(current + value))))
+                game_state['stats'][stat] = max(0, min(50, int(round(current + delta))))
             else:
-                game_state['stats'][stat] = min(max(int(round(current + value)), 0), 100)
+                game_state['stats'][stat] = clamp_with_caps(game_state, stat, current + delta)
     # 处理好感度变化
     # 默认将当前节点中首个有 people 的角色作为本次对话的对象
     speaker = None
@@ -727,6 +858,12 @@ def talk_choose():
     if favor_delta is not None and favor_people:
         if 'favor' not in game_state:
             game_state['favor'] = {}
+        # 赫奇帕奇：好感度提升10%
+        if game_state['character'].get('house') == '赫奇帕奇':
+            try:
+                favor_delta = int(round(float(favor_delta) * 1.10))
+            except Exception:
+                pass
         game_state['favor'][favor_people] = game_state['favor'].get(favor_people, 0) + int(favor_delta)
     
     if next_node == 'end' or talk_data['dialogue'].get(next_node, [{}])[0].get('type') == 'end':
@@ -882,11 +1019,11 @@ def item_action():
             if item_type == 'consumable':
                 for stat, value in item_effects[item]['effect'].items():
                     current = game_state['stats'].get(stat, 0)
-                    # 防御力单独上限为50，其他仍为100
+                    # 防御力单独上限为50，其他受学院上限影响
                     if stat == 'defense':
                         game_state['stats'][stat] = max(0, min(50, int(round(current + value))))
                     else:
-                        game_state['stats'][stat] = min(max(int(round(current + value)), 0), 100)
+                        game_state['stats'][stat] = clamp_with_caps(game_state, stat, current + value)
                 event_message = item_effects[item]['message']
                 if item in game_state['inventory']:
                     game_state['inventory'][item] -= 1
@@ -903,7 +1040,7 @@ def item_action():
                             if stat == 'defense':
                                 game_state['stats'][stat] = max(0, min(50, int(round(current - value))))
                             else:
-                                game_state['stats'][stat] = min(max(int(round(current - value)), 0), 100)
+                                game_state['stats'][stat] = clamp_with_caps(game_state, stat, current - value)
                         # 卸下装备回到背包
                         game_state['inventory'][equipped_item] = game_state['inventory'].get(equipped_item, 0) + 1
                     # 穿上新装备并应用属性
@@ -913,7 +1050,7 @@ def item_action():
                         if stat == 'defense':
                             game_state['stats'][stat] = max(0, min(50, int(round(current + value))))
                         else:
-                            game_state['stats'][stat] = min(max(int(round(current + value)), 0), 100)
+                            game_state['stats'][stat] = clamp_with_caps(game_state, stat, current + value)
                     # 从背包移除该装备
                     if item in game_state['inventory']:
                         game_state['inventory'][item] -= 1
@@ -924,6 +1061,11 @@ def item_action():
     session['game_state'] = game_state
     # 追加：在战斗中返回敌人血量以及总防御，供前端即时刷新
     stats_payload = copy.deepcopy(game_state['stats'])
+    # 附带上限值，便于前端计算百分比
+    caps = compute_stat_caps(game_state)
+    stats_payload['max_health'] = caps['health']
+    stats_payload['max_san'] = caps['san']
+    stats_payload['max_fatigue'] = caps['fatigue']
     if game_state.get('battle') and game_state['battle'].get('enemy'):
         stats_payload['enemy_health'] = game_state['battle']['enemy']['health']
         stats_payload['enemy_max_health'] = game_state['battle']['enemy']['max_health']

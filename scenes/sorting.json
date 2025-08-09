@@ -1,0 +1,14 @@
+{
+  "title": "分院仪式",
+  "description": "你坐在霍格沃茨大礼堂的高凳上，分院帽被轻轻戴在你的头顶。帽檐微微张合，低声嘀咕着什么……它正在为你挑选最合适的学院。",
+  "image": "sorting_hat.jpg",
+  "choices": [
+    {
+      "text": "听从分院帽的安排",
+      "next": "great_hall",
+      "time": 5,
+      "effect": {"fatigue": 2},
+      "random_events": []
+    }
+  ]
+}
