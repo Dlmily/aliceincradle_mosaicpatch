@@ -1,0 +1,35 @@
+{
+    "title": "魔药课教室",
+    "description": "地下教室里弥漫着奇怪的气味。斯内普教授像蝙蝠一样在教室里巡视，批评学生们的操作。坩埚冒着各种颜色的烟雾。",
+    "image": "potions.jpg",
+    "choices": [
+        {
+            "text": "制作治疗疖子的药水",
+            "next": "potions",
+            "time": 40,
+            "effect": {"fatigue": 12},
+            "random_events": [
+                {"chance": 0.3, "event": "你的坩埚爆炸了！斯内普扣了格兰芬多5分。", "effect": {"health": -10}},
+                {"chance": 0.1, "event": "你成功制作了完美的药水。斯内普不情愿地给了你加分。", "effect": {"san": -15}}
+            ]
+        },
+        {
+            "text": "向斯内普教授提问",
+            "next": "potions",
+            "time": 10,
+            "effect": {"health": -5, "fatigue": 3},
+            "random_events": [
+                {"chance": 0.4, "event": "斯内普教授嘲讽了你的问题。", "effect": {"health": -3}},
+                {"chance": 0.05, "event": "斯内普教授意外地给了你一个有用的提示。", "effect": {"san": -5}}
+            ]
+        },
+        {
+            "text": "返回走廊",
+            "next": "corridor",
+            "time": 5,
+            "random_events": [
+                {"chance": 0.2, "event": "你帮助同学收拾了魔药材料。", "effect": {"galleons": 1}}
+            ]
+        }
+    ]
+}

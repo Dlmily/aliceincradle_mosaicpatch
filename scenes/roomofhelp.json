@@ -1,0 +1,33 @@
+{
+    "title": "有求必应屋",
+    "description": "你进入了有求必应屋，房间根据你的需要变成了一个堆满宝物的密室。古董、魔法书和神秘物品散落在角落。",
+    "image": "room_of_requirement.jpg",
+    "choices": [
+        {
+            "text": "搜索宝物",
+            "next": "room_of_requirement",
+            "time": 20,
+            "random_events": [
+                {"chance": 0.3, "event": "你找到了一本古老的魔法书！", "effect": {"fatigue": 10}, "items": [{"action": "add", "item": "古老魔法书", "quantity": 1}]},
+                {"chance": 0.1, "event": "你不小心触碰了一个诅咒物品！", "effect": {"health": -10}}
+            ]
+        },
+        {
+            "text": "整理房间",
+            "next": "room_of_requirement",
+            "time": 15,
+            "effect": {"health": 5},
+            "random_events": [
+                {"chance": 0.2, "event": "你发现了一枚隐藏的加隆。", "effect": {"galleons": 1}}
+            ]
+        },
+        {
+            "text": "离开有求必应屋",
+            "next": "corridor",
+            "time": 10,
+            "random_events": [
+                {"chance": 0.1, "event": "你安全返回了走廊。", "effect": {"health": 2}}
+            ]
+        }
+    ]
+}

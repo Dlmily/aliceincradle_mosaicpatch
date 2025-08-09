@@ -1,1 +1,57 @@
-
+{
+    "title": "格兰芬多宿舍",
+    "description": "你正在格兰芬多塔楼的宿舍里。红色的帷幔围绕四柱床，窗外可以看到霍格沃茨的场地。你的魔法课本散落在桌上，海德薇在笼子里打着瞌睡。",
+    "image": "dormitory.jpg",
+    "choices": [
+        {
+            "text": "准备去上课",
+            "next": "corridor",
+            "time": 15,
+            "effect": {"fatigue": 5},
+            "random_events": [
+                {"chance": 0.2, "event": "纳威的蟾蜍跳到了你的床上！你帮助他抓住了它。", "effect": {"health": -2}},
+                {"chance": 0.1, "event": "你发现床底下有一包比比多味豆。", "effect": {"health": 5}}
+            ],
+            "items": [
+                {"action": "add", "item": "比比多味豆", "chance": 0.1, "quantity": 1}
+            ]
+        },
+        {
+            "text": "喂海德薇",
+            "next": "dormitory",
+            "time": 5,
+            "effect": {"health": 3},
+            "random_events": [
+                {"chance": 0.2, "event": "海德薇高兴地啄了啄你的手指。", "effect": {"health": 2}},
+                {"chance": 0.05, "event": "海德薇送来了霍格沃茨的信件。", "effect": {"fatigue": 5}}
+            ]
+        },
+        {
+            "text": "练习咒语",
+            "next": "dormitory",
+            "time": 20,
+            "effect": {"fatigue": 10},
+            "random_events": [
+                {"chance": 0.3, "event": "你的漂浮咒效果特别好！", "effect": {"fatigue": 5}},
+                {"chance": 0.1, "event": "咒语反弹了，差点打中室友！", "effect": {"health": -5}}
+            ]
+        },
+        {
+            "text": "课下学习",
+            "next": "dormitory",
+            "time": 25,
+            "effect": {"fatigue": 8},
+            "random_events": [
+                {"chance": 0.3, "event": "你掌握了变形课的难点！", "effect": {"fatigue": 4}},
+                {"chance": 0.2, "event": "赫敏分享了她的魔咒笔记。", "spell": "开锁咒"},
+                {"chance": 0.1, "event": "罗恩的吵闹打断了你的学习。", "effect": {"health": -3}}
+            ]
+        }
+    ],
+    "achievements": [
+        {
+            "id": "first_visit_dorm",
+            "condition": "visit"
+        }
+    ]
+}

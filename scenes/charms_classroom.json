@@ -1,0 +1,42 @@
+{
+    "title": "魔咒课教室",
+    "description": "弗立维教授的教室充满魔咒练习的痕迹。羽毛和软垫散落在地面，黑板上写着复杂的咒语手势图。空气中漂浮着练习用的羽毛，学生们专注地挥舞着魔杖。",
+    "image": "charms_classroom.jpg",
+    "choices": [
+        {
+            "text": "练习漂浮咒",
+            "next": "charms_classroom",
+            "time": 20,
+            "effect": {"fatigue": 5},
+            "random_events": [
+                {"chance": 0.4, "event": "你的羽毛优雅地漂浮起来！弗立维教授为你加分。", "effect": {"fatigue": 5}},
+                {"chance": 0.1, "event": "咒语失控，羽毛砸中了纳威的鼻子。", "effect": {"health": -3}}
+            ]
+        },
+        {
+            "text": "学习照明咒",
+            "next": "charms_classroom",
+            "time": 25,
+            "effect": {"fatigue": 6},
+            "random_events": [
+                {"chance": 0.3, "event": "魔杖尖端发出稳定的光芒！", "effect": {"fatigue": 6}},
+                {"chance": 0.15, "event": "魔杖突然爆出火花，烧焦了课本。", "effect": {"health": -4}}
+            ]
+        },
+        {
+            "text": "向弗立维教授请教",
+            "next": "charms_classroom",
+            "time": 15,
+            "effect": {"fatigue": 3},
+            "random_events": [
+                {"chance": 0.5, "event": "教授演示了完美的咒语手势。", "effect": {"fatigue": 8}},
+                {"chance": 0.05, "event": "你意外学会了高级咒语！", "spell": "盔甲护身"}
+            ]
+        },
+        {
+            "text": "返回走廊",
+            "next": "corridor",
+            "time": 5
+        }
+    ]
+}

@@ -1,0 +1,35 @@
+{
+    "title": "变形课教室",
+    "description": "麦格教授的教室井然有序。黑板前有一张讲桌，上面放着一个准备用于演示的刺猬。学生们紧张地翻着课本，等待课程开始。",
+    "image": "transfiguration.jpg",
+    "choices": [
+        {
+            "text": "尝试把老鼠变成高脚杯",
+            "next": "transfiguration",
+            "time": 30,
+            "effect": {"fatigue": 8},
+            "random_events": [
+                {"chance": 0.4, "event": "你的变形术成功了一半！老鼠变成了高脚杯，但还留着尾巴。", "effect": {"fatigue": 3}},
+                {"chance": 0.1, "event": "麦格教授表扬了你的进步。", "effect": {"magic": 10}}
+            ]
+        },
+        {
+            "text": "向赫敏请教",
+            "next": "transfiguration",
+            "time": 15,
+            "effect": {"fatigue": 5},
+            "random_events": [
+                {"chance": 0.3, "event": "赫敏给了你一些有用的建议。", "effect": {"fatigue": 3}},
+                {"chance": 0.1, "event": "罗恩在旁边做鬼脸干扰你们。", "effect": {"health": -2}}
+            ]
+        },
+        {
+            "text": "返回走廊",
+            "next": "corridor",
+            "time": 5,
+            "random_events": [
+                {"chance": 0.2, "event": "你帮麦格教授整理了讲台。", "effect": {"galleons": 1}}
+            ]
+        }
+    ]
+}

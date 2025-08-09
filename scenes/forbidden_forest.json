@@ -1,0 +1,35 @@
+{
+    "title": "禁林边缘",
+    "description": "月光勉强穿透茂密的树冠，地面上盘踞着树根和藤蔓。远处传来未知生物的嚎叫，空气中弥漫着魔法植物的气息。海格的小屋在后方透出微光。",
+    "image": "forbidden_forest.jpg",
+    "choices": [
+        {
+            "text": "采集魔法植物",
+            "next": "forbidden_forest",
+            "time": 20,
+            "effect": {"health": -3},
+            "random_events": [
+                {"chance": 0.4, "event": "你发现了发光的月光草！", "item": "月光草"},
+                {"chance": 0.3, "event": "毒触手突然攻击！", "effect": {"health": -8}},
+                {"chance": 0.2, "event": "马人指引你找到稀有草药。", "item": "龙鳞"}
+            ]
+        },
+        {
+            "text": "探索禁林深处",
+            "next": "forbidden_forest",
+            "time": 30,
+            "effect": {"health": -5},
+            "random_events": [
+                {"chance": 0.3, "event": "遭遇八眼巨蛛的巢穴！", "enemy": "八眼巨蛛", "next": "battle.html"},
+                {"chance": 0.25, "event": "发现独角兽的踪迹，获得祝福。", "effect": {"health": 10, "fatigue": 5}},
+                {"chance": 0.2, "event": "找到被偷藏的龙蛋", "item": "龙蛋"},
+                {"chance": 0.15, "event": "陷入沼泽，海格救了你", "effect": {"health": -10}}
+            ]
+        },
+        {
+            "text": "返回城堡",
+            "next": "castle_grounds",
+            "time": 10
+        }
+    ]
+}

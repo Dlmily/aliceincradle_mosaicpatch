@@ -1,0 +1,47 @@
+{
+    "title": "探索城堡",
+    "description": "你在霍格沃茨城堡的神秘走廊里探索。移动的楼梯、说话的画像和隐藏的通道让你既兴奋又有点紧张。",
+    "image": "explore.jpg",
+    "choices": [
+        {
+            "text": "前往图书馆",
+            "next": "library",
+            "time": 10,
+            "random_events": [
+                {"chance": 0.2, "event": "一幅画像给你指了条近路。", "effect": {"fatigue": -2}},
+                {"chance": 0.1, "event": "你发现了一个隐藏的魔法物品。", "effect": {"galleons": 3}}
+            ]
+        },
+        {
+            "text": "寻找有求必应屋",
+            "next": "explore",
+            "time": 20,
+            "random_events": [
+                {"chance": 0.3, "event": "你感觉离有求必应屋很近了。", "effect": {"fatigue": 3}},
+                {
+                    "chance": 0.05,
+                    "event": "你意外发现了有求必应屋的入口！",
+                    "effect": {"fatigue": -10},
+                    "unlock_scene": "room_of_requirement"
+                }
+            ]
+        },
+        {
+            "text": "去魁地奇球场",
+            "next": "quidditch",
+            "time": 15,
+            "random_events": [
+                {"chance": 0.2, "event": "你在路上遇到了伍德队长。", "effect": {"fatigue": -2}},
+                {"chance": 0.1, "event": "皮皮鬼试图阻止你通过。", "effect": {"health": -5}}
+            ]
+        },
+        {
+            "text": "返回走廊",
+            "next": "corridor",
+            "time": 8,
+            "random_events": [
+                {"chance": 0.1, "event": "你发现了一条返回的捷径。", "effect": {"health": 2}}
+            ]
+        }
+    ]
+}

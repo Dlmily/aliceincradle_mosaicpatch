@@ -1,0 +1,51 @@
+{
+    "title": "移动楼梯走廊",
+    "description": "你站在霍格沃茨的走廊里，周围是移动的楼梯和窃窃私语的画像。学生们匆匆走过，赶去上第一节课。皮皮鬼在上方飘浮，准备恶作剧。",
+    "image": "corridor.jpg",
+    "choices": [
+        {
+            "text": "去变形课教室",
+            "next": "transfiguration",
+            "time": 5,
+            "random_events": [
+                {"chance": 0.3, "event": "皮皮鬼朝你扔水气球！你躲开了大部分，但还是湿了一点。", "effect": {"health": -3}},
+                {"chance": 0.15, "event": "你帮助一个迷路的一年级生找到了教室。", "effect": {"galleons": 2}}
+            ]
+        },
+        {
+            "text": "去魔药课教室",
+            "next": "potions",
+            "time": 10,
+            "random_events": [
+                {"chance": 0.2, "event": "楼梯突然移动，你差点摔倒。", "effect": {"health": -2}},
+                {"chance": 0.1, "event": "你发现了一条通往魔药课教室的捷径。", "effect": {"fatigue": 3}}
+            ]
+        },
+        {
+            "text": "去大礼堂吃早餐",
+            "next": "great_hall",
+            "time": 8,
+            "effect": {"health": 15},
+            "random_events": [
+                {"chance": 0.2, "event": "你闻到了早餐的香味，加快了脚步。", "effect": {"health": 5}},
+                {"chance": 0.1, "event": "费尔奇先生让你帮忙打扫走廊。", "effect": {"health": -5}}
+            ]
+        },
+        {
+            "text": "探索城堡",
+            "next": "explore",
+            "time": 15,
+            "random_events": [
+                {"chance": 0.3, "event": "你发现了一个隐藏的壁龛，里面有些旧课本。", "effect": {"galleons": 5}},
+                {"chance": 0.05, "event": "你遇到了皮皮鬼！他追着你扔臭蛋。", "effect": {"health": -8}}
+            ]
+        },
+        {
+            "text": "向周围人谈话",
+            "type": "talk",
+            "talk_files": ["talk_1"],
+            "time": 5,
+            "next": "corridor"
+        }
+    ]
+}

@@ -1,0 +1,35 @@
+{
+    "title": "魁地奇球场",
+    "description": "广阔的球场沐浴在晨光中。三个球门环在风中微微摇晃，扫帚棚里整齐排列着各种型号的飞天扫帚。",
+    "image": "quidditch.jpg",
+    "choices": [
+        {
+            "text": "练习飞行",
+            "next": "quidditch",
+            "time": 40,
+            "effect": {"health": 10, "fatigue": 5},
+            "random_events": [
+                {"chance": 0.25, "event": "你抓住了金色飞贼的练习模型！", "effect": {"fatigue": 8}},
+                {"chance": 0.1, "event": "伍德队长邀请你参加训练赛。", "effect": {"health": 15}}
+            ]
+        },
+        {
+            "text": "观看球队训练",
+            "next": "quidditch",
+            "time": 30,
+            "effect": {"health": 5},
+            "random_events": [
+                {"chance": 0.2, "event": "你学到了新的魁地奇技巧。", "effect": {"fatigue": 3}},
+                {"chance": 0.05, "event": "哈利向你展示了火弩箭。", "effect": {"fatigue": 5}}
+            ]
+        },
+        {
+            "text": "返回城堡",
+            "next": "corridor",
+            "time": 10,
+            "random_events": [
+                {"chance": 0.1, "event": "你帮球队收拾了训练器材。", "effect": {"galleons": 2}}
+            ]
+        }
+    ]
+}

@@ -1,0 +1,44 @@
+{
+    "title": "霍格沃茨大礼堂",
+    "description": "宏伟的大礼堂里，四个学院的桌子摆满食物。天花板被施了魔法，显示着外面的天空。猫头鹰们带着邮件飞来飞去。",
+    "image": "great_hall.jpg",
+    "choices": [
+        {
+            "text": "吃早餐",
+            "next": "great_hall",
+            "time": 20,
+            "effect": {"health": 20},
+            "random_events": [
+                {"chance": 0.2, "event": "你收到家里寄来的糖果包裹！", "effect": {"health": 10}},
+                {"chance": 0.1, "event": "邓布利多校长对你微笑点头。", "effect": {"fatigue": -5}}
+            ]
+        },
+        {
+            "text": "与朋友聊天",
+            "next": "great_hall",
+            "time": 15,
+            "effect": {"health": 5},
+            "random_events": [
+                {"chance": 0.3, "event": "哈利分享了他的魁地奇经历。", "effect": {"fatigue": -3}},
+                {"chance": 0.1, "event": "马尔福过来挑衅，影响了你的心情。", "effect": {"health": -5}}
+            ]
+        },
+        {
+            "text": "查看公告板",
+            "next": "great_hall",
+            "time": 10,
+            "random_events": [
+                {"chance": 0.2, "event": "你发现了一个有趣的社团活动。", "effect": {"fatigue": -2}},
+                {"chance": 0.05, "event": "你看到自己的名字出现在学院杯加分名单上！", "effect": {"fatigue": -5}}
+            ]
+        },
+        {
+            "text": "返回走廊",
+            "next": "corridor",
+            "time": 5,
+            "random_events": [
+                {"chance": 0.1, "event": "你帮家养小精灵捡起了掉落的盘子。", "effect": {"health": 3}}
+            ]
+        }
+    ]
+}

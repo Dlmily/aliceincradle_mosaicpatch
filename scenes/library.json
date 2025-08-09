@@ -1,0 +1,46 @@
+{
+    "title": "霍格沃茨图书馆",
+    "description": "安静的书海中，平斯夫人警惕地巡视着。书架高耸入天花板，记载着千年魔法知识。禁书区用链条拦着，散发出神秘气息。",
+    "image": "library.jpg",
+    "choices": [
+        {
+            "text": "查找魔咒书",
+            "next": "library",
+            "time": 30,
+            "effect": {"fatigue": 10},
+            "random_events": [
+                {"chance": 0.2, "event": "你找到了需要的确切参考资料！", "effect": {"fatigue": 8}},
+                {"chance": 0.1, "event": "平斯夫人发现你在禁书区附近游荡。", "effect": {"health": -3}},
+                {"chance": 0.15, "event": "你发现了一本失传的咒语手册！", "spell": "修复咒"}                
+            ]
+        },
+        {
+            "text": "写魔法史论文",
+            "next": "library",
+            "time": 45,
+            "effect": {"fatigue": 5},
+            "random_events": [
+                {"chance": 0.3, "event": "宾斯教授飘过，给了你一些建议。", "effect": {"fatigue": 3}},
+                {"chance": 0.1, "event": "你发现了一本关于魔法史的珍贵书籍。", "effect": {"magic": 7}}
+            ]
+        },
+        {
+            "text": "尝试进入禁书区",
+            "next": "library",
+            "time": 15,
+            "effect": {"health": -5},
+            "random_events": [
+                {"chance": 0.2, "event": "你成功溜进了禁书区！", "effect": {"fatigue": 8}},
+                {"chance": 0.3, "event": "平斯夫人抓住了你并扣了学院分。", "effect": {"health": -5}}
+            ]
+        },
+        {
+            "text": "离开图书馆",
+            "next": "corridor",
+            "time": 5,
+            "random_events": [
+                {"chance": 0.1, "event": "平斯夫人感谢你保持安静。", "effect": {"galleons": 1}}
+            ]
+        }
+    ]
+}
