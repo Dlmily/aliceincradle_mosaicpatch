@@ -1,0 +1,64 @@
+{
+    "enemies": [
+        {
+            "name": "鹰头马身有翼兽",
+            "image": "ying.png",
+            "health": 50,
+            "max_health": 50,
+            "skills": [
+                {
+                    "name": "利爪攻击",
+                    "description": "用锋利的爪子进行快速攻击",
+                    "effect": {"health": -10, "fatigue": 5}
+                },
+                {
+                    "name": "飞翼冲击",
+                    "description": "利用翅膀掀起强风攻击",
+                    "effect": {"san": -5, "fatigue": 3}
+                }
+            ],
+            "rewards": [
+                {
+                    "item": "龙鳞",
+                    "quantity": 1,
+                    "chance": 0.8
+                },
+                {
+                    "item": "月光草",
+                    "quantity": 2,
+                    "chance": 0.6
+                }
+            ]
+        },
+        {
+            "name": "八眼巨蛛",
+            "image": "spider.png",
+            "health": 60,
+            "max_health": 60,
+            "skills": [
+                {
+                    "name": "毒液喷射",
+                    "description": "喷射毒液造成持续伤害",
+                    "effect": {"health": -15, "san": -5}
+                },
+                {
+                    "name": "蛛网束缚",
+                    "description": "用蛛网限制行动",
+                    "effect": {"fatigue": 10}
+                }
+            ],
+            "rewards": [
+                {
+                    "item": "魔法零食",
+                    "quantity": 1,
+                    "chance": 0.7
+                },
+                {
+                    "item": "比比多味豆",
+                    "quantity": 3,
+                    "chance": 0.5
+                }
+            ]
+        }
+    ]
+}

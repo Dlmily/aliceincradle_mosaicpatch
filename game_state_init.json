@@ -1,0 +1,52 @@
+{
+  "current_scene": "dormitory",
+  "stats": {
+    "galleons": 26,
+    "sickle": 50,
+    "knut": 138,
+    "health": 100,
+    "san": 100,
+    "fatigue": 0,
+    "time": "09:45 AM"
+  },
+  "inventory": {
+    "墨水": 2,
+    "学院袍": 1,
+    "巧克力蛙": 2,
+    "猫头鹰": 1,
+    "魔杖": 1,
+    "魔法课本": 2
+  },
+  "containers": {
+    "backpack": {},
+    "trunk": {
+      "备用袍子": 1,
+      "羊皮纸": 2,
+      "羽毛笔": 2,
+      "魔法零食": 2
+    }
+  },
+  "equipment": {
+    "body": null,
+    "hand": null
+  },
+  "visited": [
+    "corridor",
+    "potions",
+    "dormitory"
+  ],
+  "unlocked_scenes": [
+    "dormitory",
+    "corridor",
+    "great_hall",
+    "potions",
+    "library",
+    "explore",
+    "transfiguration",
+    "quidditch"
+  ],
+  "events": {},
+  "last_action": null,
+  "grade": 1,
+  "known_spells": []
+}

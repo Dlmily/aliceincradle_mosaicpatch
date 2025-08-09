@@ -1,0 +1,17 @@
+[
+    {
+        "id": "first_visit_dorm",
+        "name": "初次探访",
+        "description": "首次访问格兰芬多宿舍"
+    },
+    {
+        "id": "learn_first_spell",
+        "name": "咒语新手",
+        "description": "学会第一个咒语"
+    },
+    {
+        "id": "collect_first_item",
+        "name": "物品收集者",
+        "description": "获得第一个物品"
+    }
+]
