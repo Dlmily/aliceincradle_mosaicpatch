@@ -317,14 +317,15 @@ function updateStats(stats, equipment) {
             enemyHpLabel.textContent = `敌人血量: ${stats.enemy_health}/${stats.enemy_max_health}`;
         }
     }
-    // 更新防御显示（如果后端返回 defense_total 则优先，否则仅显示基础防御）
-    const defenseElement = document.getElementById('defense-stat');
-    if (defenseElement) {
-        if (typeof stats.defense_total !== 'undefined') {
-            defenseElement.textContent = `${stats.defense_total}`;
-        } else if (typeof stats.defense !== 'undefined') {
-            defenseElement.textContent = `${stats.defense}`;
-        }
+    // 更新防御条和数值（总防御优先，其次基础防御），上限50
+    const defenseBar = document.getElementById('defense-bar');
+    const defenseNumber = document.getElementById('defense-number');
+    if (defenseBar && defenseNumber) {
+        const totalDefense = typeof stats.defense_total !== 'undefined' ? stats.defense_total : (typeof stats.defense !== 'undefined' ? stats.defense : 0);
+        const capped = Math.max(0, Math.min(50, Math.round(totalDefense)));
+        const percent = (capped / 50) * 100;
+        defenseBar.style.width = `${percent}%`;
+        defenseNumber.textContent = `${capped}/50`;
     }
     document.querySelector('.inventory li:nth-child(1)').textContent = `手部: ${equipment.hand || '空'}`;
     document.querySelector('.inventory li:nth-child(2)').textContent = `身体: ${equipment.body || '空'}`;

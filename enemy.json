@@ -5,6 +5,7 @@
             "image": "ying.png",
             "health": 50,
             "max_health": 50,
+            "defense": 60,
             "skills": [
                 {
                     "name": "利爪攻击",
@@ -35,6 +36,7 @@
             "image": "spider.png",
             "health": 60,
             "max_health": 60,
+            "defense": 80,
             "skills": [
                 {
                     "name": "毒液喷射",

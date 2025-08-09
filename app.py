@@ -200,9 +200,12 @@ def init_game_state(name, gender):
     # 初始化好感度
     initial_state['favor'] = {}
     
-    # 新增：初始化防御力
+    # 新增：初始化防御力（默认5，上限50）
     if 'defense' not in initial_state['stats']:
-        initial_state['stats']['defense'] = 0
+        initial_state['stats']['defense'] = 5
+    else:
+        # 载入文件中的值也限制到 [0, 50]
+        initial_state['stats']['defense'] = max(0, min(50, int(round(initial_state['stats'].get('defense', 5)))))
     
     initial_state['character'] = {
         'name': name,
@@ -414,7 +417,10 @@ def choose():
     if 'effect' in choice:
         for stat, value in choice['effect'].items():
             current = game_state['stats'].get(stat, 0)
-            game_state['stats'][stat] = min(max(current + value, 0), 100)
+            if stat == 'defense':
+                game_state['stats'][stat] = max(0, min(50, int(round(current + value))))
+            else:
+                game_state['stats'][stat] = min(max(int(round(current + value)), 0), 100)
     
     game_state['current_scene'] = choice['next']
     
@@ -610,28 +616,42 @@ def calculate_success_chance(player_stats):
     return min(max(base_chance + san_bonus - fatigue_penalty, 0), 1)
 
 def apply_skill_effect(skill, target_stats):
-    """应用技能效果。若目标为玩家且效果包含对生命的伤害，则根据总防御减少伤害。"""
+    """应用技能效果。若目标为玩家且效果包含对生命的伤害，则根据总防御减少伤害，并对数值进行四舍五入。"""
     game_state = session.get('game_state')
     effect = skill.get('effect', {})
     for stat, value in effect.items():
         delta = value
-        # 仅当作用于生命值的负向效果时考虑防御
-        if stat == 'health' and value < 0 and game_state and target_stats is game_state['stats']:
-            base_defense = game_state['stats'].get('defense', 0)
-            temp_defense = game_state['battle'].get('defense_bonus', {}).get('amount', 0) if game_state['battle'].get('defense_bonus', {}).get('duration', 0) > 0 else 0
-            total_defense = max(0, min(100, base_defense + temp_defense))
-            reduction_ratio = 1 - (total_defense / 100.0)
-            delta = int(round(value * reduction_ratio))
-        target_stats[stat] = min(max(target_stats[stat] + delta, 0), 100)
+        # 四舍五入所有来自技能的数值变化
+        try:
+            delta = int(round(delta))
+        except Exception:
+            pass
+        # 仅当作用于生命值的负向效果时考虑玩家总防御（包含临时防御），使用公式：
+        # 最终伤害 = 怪物攻击力 × (1 - 玩家防御力 / (玩家防御力 + 100))
+        if stat == 'health' and delta < 0 and game_state and target_stats is game_state['stats']:
+            base_defense = max(0, int(game_state['stats'].get('defense', 0)))
+            temp_defense = 0
+            if game_state.get('battle', {}).get('defense_bonus', {}).get('duration', 0) > 0:
+                temp_defense = int(game_state['battle']['defense_bonus'].get('amount', 0))
+            total_defense = max(0, min(50, base_defense + temp_defense))
+            raw_attack = -delta
+            reduction_ratio = 1 - (total_defense / float(total_defense + 100)) if (total_defense + 100) != 0 else 1.0
+            final_damage = int(round(raw_attack * reduction_ratio))
+            delta = -final_damage
+        target_stats[stat] = min(max(int(round(target_stats[stat] + delta)), 0), 100)
 
 def apply_player_skill_effect(skill, enemy, grade, battle_log):
     game_state = session['game_state']
     if skill.get('type') == 1:  # 伤害
         # 所有数值从 spells.json 获取
-        damage = skill['effect']['damage']
+        base_damage = float(skill['effect']['damage'])
         grade_bonus = grade * 0.05
         buff_bonus = game_state['battle']['buff']['attack_boost'] if game_state['battle']['buff']['duration'] > 0 else 0
-        final_damage = int(damage * (1 + grade_bonus + buff_bonus))
+        raw_attack = base_damage * (1 + grade_bonus + buff_bonus)
+        enemy_defense = max(0, int(enemy.get('defense', 0)))
+        # 最终伤害 = 魔咒攻击力 × (1 - 怪物的防御力 / (怪物的防御力 + 300))
+        reduction_ratio = 1 - (enemy_defense / float(enemy_defense + 300)) if (enemy_defense + 300) != 0 else 1.0
+        final_damage = int(round(raw_attack * reduction_ratio))
         enemy['health'] -= final_damage
         battle_log.append(f"对 {enemy['name']} 造成了 {final_damage} 点伤害")
     elif skill.get('type') == 2:  # 防御（数值化）
@@ -642,10 +662,10 @@ def apply_player_skill_effect(skill, enemy, grade, battle_log):
         new_amount = current.get('amount', 0) + defense_boost
         new_duration = max(current.get('duration', 0), duration)
         game_state['battle']['defense_bonus'] = {'amount': new_amount, 'duration': new_duration}
-        total_def = game_state['stats'].get('defense', 0) + new_amount
+        total_def = min(50, game_state['stats'].get('defense', 0) + new_amount)
         battle_log.append(f"你的防御力提升了 {defense_boost} 点（当前总防御 {total_def}），持续 {new_duration} 回合！")
     elif skill.get('type') == 3:  # 持续伤害
-        damage = skill['effect']['damage']
+        damage = int(round(skill['effect']['damage']))
         duration = skill['effect']['duration']
         game_state['battle']['persistent_damage'] = {'damage': damage, 'duration': duration}
         enemy['health'] -= damage
@@ -690,7 +710,10 @@ def talk_choose():
     if 'effect' in chosen_option:
         for stat, value in chosen_option['effect'].items():
             current = game_state['stats'].get(stat, 0)
-            game_state['stats'][stat] = min(max(current + value, 0), 100)
+            if stat == 'defense':
+                game_state['stats'][stat] = max(0, min(50, int(round(current + value))))
+            else:
+                game_state['stats'][stat] = min(max(int(round(current + value)), 0), 100)
     # 处理好感度变化
     # 默认将当前节点中首个有 people 的角色作为本次对话的对象
     speaker = None
@@ -859,7 +882,11 @@ def item_action():
             if item_type == 'consumable':
                 for stat, value in item_effects[item]['effect'].items():
                     current = game_state['stats'].get(stat, 0)
-                    game_state['stats'][stat] = min(max(current + value, 0), 100)
+                    # 防御力单独上限为50，其他仍为100
+                    if stat == 'defense':
+                        game_state['stats'][stat] = max(0, min(50, int(round(current + value))))
+                    else:
+                        game_state['stats'][stat] = min(max(int(round(current + value)), 0), 100)
                 event_message = item_effects[item]['message']
                 if item in game_state['inventory']:
                     game_state['inventory'][item] -= 1
@@ -873,14 +900,20 @@ def item_action():
                     if equipped_item and equipped_item in item_effects:
                         for stat, value in item_effects[equipped_item].get('effect', {}).items():
                             current = game_state['stats'].get(stat, 0)
-                            game_state['stats'][stat] = min(max(current - value, 0), 100)
+                            if stat == 'defense':
+                                game_state['stats'][stat] = max(0, min(50, int(round(current - value))))
+                            else:
+                                game_state['stats'][stat] = min(max(int(round(current - value)), 0), 100)
                         # 卸下装备回到背包
                         game_state['inventory'][equipped_item] = game_state['inventory'].get(equipped_item, 0) + 1
                     # 穿上新装备并应用属性
                     game_state['equipment'][slot] = item
                     for stat, value in item_effects[item].get('effect', {}).items():
                         current = game_state['stats'].get(stat, 0)
-                        game_state['stats'][stat] = min(max(current + value, 0), 100)
+                        if stat == 'defense':
+                            game_state['stats'][stat] = max(0, min(50, int(round(current + value))))
+                        else:
+                            game_state['stats'][stat] = min(max(int(round(current + value)), 0), 100)
                     # 从背包移除该装备
                     if item in game_state['inventory']:
                         game_state['inventory'][item] -= 1
@@ -895,7 +928,7 @@ def item_action():
         stats_payload['enemy_health'] = game_state['battle']['enemy']['health']
         stats_payload['enemy_max_health'] = game_state['battle']['enemy']['max_health']
         temp_def = game_state['battle'].get('defense_bonus', {}).get('amount', 0) if game_state['battle'].get('defense_bonus', {}).get('duration', 0) > 0 else 0
-        stats_payload['defense_total'] = stats_payload.get('defense', 0) + temp_def
+        stats_payload['defense_total'] = min(50, stats_payload.get('defense', 0) + temp_def)
     return jsonify({
         'inventory': game_state['inventory'],
         'container_items': game_state['containers'].get(container, {}) if container else {},
