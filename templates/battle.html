@@ -40,7 +40,11 @@
                 </div>
                 <div class="stat">
                     {% set temp_def = (game_state.battle.get('defense_bonus', {}).get('amount', 0)) if game_state.battle.get('defense_bonus', {}).get('duration', 0) > 0 else 0 %}
-                    <span class="stat-label">防御力: <span id="defense-stat">{{ stats.defense + temp_def }}</span></span>
+                    {% set total_def = (stats.defense + temp_def) %}
+                    {% set total_def_capped = 50 if total_def > 50 else (0 if total_def < 0 else total_def) %}
+                    <span class="stat-label">防御力:</span>
+                    <div class="stat-bar"><div id="defense-bar" class="stat-value" style="width: {{ (total_def_capped / 50.0) * 100 }}%; background-color: #32cd32;"></div></div>
+                    <span id="defense-number" class="stat-number">{{ total_def_capped }}/50</span>
                 </div>
                 <div class="stat">
                     <span class="stat-label" id="galleons-stat">加隆: {{ stats.galleons }}</span>
