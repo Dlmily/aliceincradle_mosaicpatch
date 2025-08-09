@@ -1,0 +1,56 @@
+{
+    "title": "斯莱特林宿舍",
+    "description": "你来到地窖深处的斯莱特林宿舍，石墙冰凉，绿银相间的帷幔垂落，湖底微光透过窗户摇曳。空气中带着一丝潮湿与神秘。",
+    "image": "dormitory_slytherin.jpg",
+    "choices": [
+        {
+            "text": "整理长袍与徽章",
+            "next": "dormitory_slytherin",
+            "time": 10,
+            "effect": {"fatigue": 5},
+            "random_events": [
+                {"chance": 0.2, "event": "你整理出一枚古旧的家族徽章，颇具纪念意义。", "effect": {"san": 3}},
+                {"chance": 0.1, "event": "你从口袋里摸出几枚被遗忘的硬币。", "effect": {"galleons": 1, "sickle": 2, "knut": 5}}
+            ]
+        },
+        {
+            "text": "在湖窗旁小憩",
+            "next": "dormitory_slytherin",
+            "time": 15,
+            "effect": {"fatigue": -5},
+            "random_events": [
+                {"chance": 0.2, "event": "一条巨大的影子从窗外掠过……也许是巨怪？", "effect": {"san": -2}},
+                {"chance": 0.1, "event": "窗外的气泡形似‘S’字母，你感觉很幸运。", "effect": {"san": 3}}
+            ]
+        },
+        {
+            "text": "巫师决斗练习",
+            "next": "dormitory_slytherin",
+            "time": 20,
+            "effect": {"fatigue": 8},
+            "random_events": [
+                {"chance": 0.25, "event": "你的攻击咒施展得行云流水！", "effect": {"san": 2}},
+                {"chance": 0.1, "event": "魔杖突然打滑，险些误伤墙上的肖像。", "effect": {"health": -4}}
+            ]
+        },
+        {
+            "text": "复习魔药学",
+            "next": "dormitory_slytherin",
+            "time": 25,
+            "effect": {"fatigue": 8},
+            "random_events": [
+                {"chance": 0.25, "event": "你记住了几条教授的小窍门。", "effect": {"san": 2}},
+                {"chance": 0.15, "event": "材料笔记让你醍醐灌顶。", "spell": "清水如泉"}
+            ]
+        },
+        {
+            "text": "离开去走廊",
+            "next": "corridor",
+            "time": 10,
+            "effect": {"fatigue": 3}
+        }
+    ],
+    "achievements": [
+        {"id": "first_visit_dorm", "condition": "visit"}
+    ]
+}

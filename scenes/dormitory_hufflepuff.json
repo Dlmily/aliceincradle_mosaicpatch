@@ -1,0 +1,46 @@
+{
+    "title": "赫奇帕奇宿舍",
+    "description": "你推开厨房旁温暖的圆形门洞，赫奇帕奇宿舍弥漫着烘焙与泥土的气息。黄色与黑色的挂毯温馨可亲，藤蔓沿着窗框蔓延。",
+    "image": "dormitory_hufflepuff.jpg",
+    "choices": [
+        {
+            "text": "打理盆栽",
+            "next": "dormitory_hufflepuff",
+            "time": 15,
+            "effect": {"fatigue": 6},
+            "random_events": [
+                {"chance": 0.3, "event": "曼德拉草心情不错，发出轻柔的歌声。", "effect": {"san": 3}},
+                {"chance": 0.1, "event": "你分到了一小包富饶的土壤。", "item": "富饶土壤"}
+            ]
+        },
+        {
+            "text": "炉火边休憩",
+            "next": "dormitory_hufflepuff",
+            "time": 20,
+            "effect": {"fatigue": -5},
+            "random_events": [
+                {"chance": 0.25, "event": "温暖让你精神放松。", "effect": {"san": 4}},
+                {"chance": 0.1, "event": "你不小心被烫了一下。", "effect": {"health": -3}}
+            ]
+        },
+        {
+            "text": "整理公共休息室",
+            "next": "dormitory_hufflepuff",
+            "time": 20,
+            "effect": {"fatigue": 8},
+            "random_events": [
+                {"chance": 0.3, "event": "大家的笑容让你倍感踏实。", "effect": {"san": 3}},
+                {"chance": 0.1, "event": "你在沙发缝里找到了一些硬币。", "effect": {"galleons": 1, "sickle": 1, "knut": 5}}
+            ]
+        },
+        {
+            "text": "离开去走廊",
+            "next": "corridor",
+            "time": 10,
+            "effect": {"fatigue": 3}
+        }
+    ],
+    "achievements": [
+        {"id": "first_visit_dorm", "condition": "visit"}
+    ]
+}
