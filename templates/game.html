@@ -69,14 +69,15 @@
             <div class="inventory-section">
                 <button class="inventory-button" onclick="openModal('inventoryModal')">🎒 查看物品</button>
                 <button class="inventory-button spells-button" onclick="openSpellsModal()">📜 查看所学咒语</button>
+                <button class="inventory-button" onclick="openFavorModal()">💬 查看好感度</button>
                 <button class="achievements-button" onclick="openAchievementsModal()">🏆 查看成就</button>
             </div>
             {% if debug_mode %}
             <div class="dev-tools">
                 <h3>开发者快速旅行</h3>
                 <ul class="locations">
-                    {% for scene_id in all_scene_ids %}
-                    <li><a href="{{ url_for('navigate', scene_id=scene_id) }}">{{ scene_id }}</a></li>
+                    {% for s in debug_scenes %}
+                    <li><a href="{{ url_for('navigate', scene_id=s.id) }}">{{ s.title }}</a></li>
                     {% endfor %}
                 </ul>
                 <a href="{{ url_for('reload_scenes') }}" class="dev-button">🔄 重新加载场景</a>
@@ -229,6 +230,19 @@
             </div>
             <div class="modal-footer">
                 <button class="modal-close-button" onclick="closeModal('achievementsModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="favorModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('favorModal')">&times;</span>
+            <h2>好感度</h2>
+            <div class="items-container" id="favor-list">
+                <div class="empty-message">加载中...</div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-close-button" onclick="closeModal('favorModal')">关闭</button>
             </div>
         </div>
     </div>

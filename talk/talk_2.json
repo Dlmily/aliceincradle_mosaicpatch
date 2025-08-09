@@ -1,0 +1,23 @@
+{
+  "title": "与赫敏的交流",
+  "description": "你在图书馆附近遇到了赫敏，她正抱着一摞书。",
+  "dialogue": {
+    "1-1": [
+      { "people": "赫敏", "chat": "最近在学习新的魔咒吗？我可以推荐几本不错的书。" },
+      { "people": "", "chat": "你对她的热情印象深刻。" },
+      { "type": "choice", "question": "你的回应是？", "choices": [
+        { "text": "感谢推荐，并请她一起学习", "next": "1-2", "favor_delta": 8 },
+        { "text": "婉拒，表示自己已经很忙", "next": "end", "favor_delta": -4 }
+      ] }
+    ],
+    "1-2": [
+      { "people": "赫敏", "chat": "太好了！我们放学后在图书馆见。" },
+      { "people": "", "chat": "或许这将有助于你的魔法学习。" },
+      { "type": "end", "next_scene": "library" }
+    ],
+    "end": [
+      { "people": "", "chat": "你们简单寒暄后分开。" },
+      { "type": "end", "next_scene": "corridor" }
+    ]
+  }
+}

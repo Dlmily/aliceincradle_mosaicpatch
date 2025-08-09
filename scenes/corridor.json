@@ -43,7 +43,7 @@
         {
             "text": "向周围人谈话",
             "type": "talk",
-            "talk_files": ["talk_1"],
+            "talk_files": ["talk_1", "talk_2"],
             "time": 5,
             "next": "corridor"
         }

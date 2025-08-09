@@ -14,14 +14,11 @@
             ]
         },
         {
-            "text": "与朋友聊天",
-            "next": "great_hall",
+            "text": "与别人聊天",
+            "type": "talk",
+            "talk_files": ["talk_1", "talk_2"],
             "time": 15,
-            "effect": {"health": 5},
-            "random_events": [
-                {"chance": 0.3, "event": "哈利分享了他的魁地奇经历。", "effect": {"fatigue": -3}},
-                {"chance": 0.1, "event": "马尔福过来挑衅，影响了你的心情。", "effect": {"health": -5}}
-            ]
+            "next": "great_hall"
         },
         {
             "text": "查看公告板",
