@@ -315,7 +315,7 @@ def game():
         scene_ids_for_debug = [sid for sid in all_scene_ids if sid in game_state['unlocked_scenes']]
     debug_scenes = [{
         'id': sid,
-        'title': get_scene(sid).get('title', sid)
+        'title': (get_scene(sid)['title'] if isinstance(get_scene(sid), dict) and 'title' in get_scene(sid) else sid)
     } for sid in scene_ids_for_debug]
     
     can_undo = game_state['previous_state'] is not None
@@ -487,7 +487,8 @@ def choose():
                         game_state['unlocked_scenes'].append(unlock_id)
                         # 首次加入访问列表标题提示
                         try:
-                            title = get_scene(unlock_id).get('title', unlock_id)
+                            scene_obj = get_scene(unlock_id)
+                            title = scene_obj['title'] if isinstance(scene_obj, dict) and 'title' in scene_obj else unlock_id
                         except Exception:
                             title = unlock_id
                         session['action_event'] = (action_event + '；' if action_event else '') + f"解锁了场景：{title}"
@@ -617,7 +618,7 @@ def battle():
 
     debug_scenes = [{
         'id': sid,
-        'title': get_scene(sid).get('title', sid)
+        'title': (get_scene(sid)['title'] if isinstance(get_scene(sid), dict) and 'title' in get_scene(sid) else sid)
     } for sid in get_all_scene_ids()]
     caps = compute_stat_caps(game_state)
     return render_template('battle.html',
