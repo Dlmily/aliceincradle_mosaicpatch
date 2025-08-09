@@ -307,4 +307,59 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 初始化库存显示
     loadInventory();
+
+    // 文本特效解析与应用
+    function escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/\"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function mapColorKeyword(keyword) {
+        const k = keyword.trim().toLowerCase();
+        const map = {
+            'red': '#ff4d4f', '蓝': '#3b82f6', '蓝色': '#3b82f6', 'blue': '#3b82f6',
+            '绿': '#22c55e', '绿色': '#22c55e', 'green': '#22c55e',
+            '黄': '#facc15', '黄色': '#facc15', 'yellow': '#facc15',
+            '紫': '#a855f7', '紫色': '#a855f7', 'purple': '#a855f7',
+            '青': '#06b6d4', '青色': '#06b6d4', 'cyan': '#06b6d4',
+            '橙': '#fb923c', '橙色': '#fb923c', 'orange': '#fb923c',
+            '白': '#e5e7eb', '白色': '#e5e7eb', 'white': '#e5e7eb',
+            '黑': '#111827', '黑色': '#111827', 'black': '#111827',
+            '金': '#d4af37', '金色': '#d4af37', 'gold': '#d4af37'
+        };
+        return map[k] || k || '#d4af37';
+    }
+
+    function transformTextEffects(inputHtml) {
+        if (!inputHtml) return inputHtml;
+        let output = inputHtml;
+        // 乱码/故障：%%文本%%
+        output = output.replace(/%%([\s\S]*?)%%/g, (m, text) => {
+            const safe = escapeHtml(text);
+            return `<span class="glitch-text" data-text="${safe}">${safe}</span>`;
+        });
+        // 发光颜色：&&文本#颜色#&&
+        output = output.replace(/&&([\s\S]*?)#([^#]+?)#&&/g, (m, text, color) => {
+            const safeText = escapeHtml(text);
+            const c = mapColorKeyword(color);
+            return `<span class="glow-text" style="--glow-color:${c}">${safeText}</span>`;
+        });
+        // 加粗：**文本**
+        output = output.replace(/\*\*([\s\S]+?)\*\*/g, (m, text) => `<strong>${escapeHtml(text)}</strong>`);
+        return output;
+    }
+
+    function applyTextEffects() {
+        const nodes = document.querySelectorAll('.scene-description, .dialogue, .scene-title, .dialogue-choice');
+        nodes.forEach(node => {
+            const raw = node.textContent;
+            node.innerHTML = transformTextEffects(raw);
+        });
+    }
+
+    applyTextEffects();
 });
