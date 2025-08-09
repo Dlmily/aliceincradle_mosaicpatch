@@ -1,0 +1,46 @@
+{
+    "title": "拉文克劳宿舍",
+    "description": "你走进拉文克劳塔楼的宿舍，蓝铜色的丝绒与拱形窗映出星空。壁炉旁安静地摆放着一排排书籍，空气中有墨水与羊皮纸的香气。",
+    "image": "dormitory_ravenclaw.jpg",
+    "choices": [
+        {
+            "text": "抄写课堂笔记",
+            "next": "dormitory_ravenclaw",
+            "time": 15,
+            "effect": {"fatigue": 6},
+            "random_events": [
+                {"chance": 0.3, "event": "你总结出一条清晰的思路。", "effect": {"san": 3}},
+                {"chance": 0.15, "event": "灵感一现，你掌握了一个有用的咒语。", "spell": "护盾咒"}
+            ]
+        },
+        {
+            "text": "观星与冥想",
+            "next": "dormitory_ravenclaw",
+            "time": 20,
+            "effect": {"fatigue": -4},
+            "random_events": [
+                {"chance": 0.25, "event": "星象似乎预示着学业顺利。", "effect": {"san": 4}},
+                {"chance": 0.1, "event": "你沉思太久有些恍惚。", "effect": {"san": -2}}
+            ]
+        },
+        {
+            "text": "研读魔药典籍",
+            "next": "dormitory_ravenclaw",
+            "time": 25,
+            "effect": {"fatigue": 8},
+            "random_events": [
+                {"chance": 0.3, "event": "你掌握了熬制时的关键火候。", "effect": {"san": 2}},
+                {"chance": 0.15, "event": "你记录下一段有趣的咒语注解。", "spell": "清水如泉"}
+            ]
+        },
+        {
+            "text": "离开去走廊",
+            "next": "corridor",
+            "time": 10,
+            "effect": {"fatigue": 3}
+        }
+    ],
+    "achievements": [
+        {"id": "first_visit_dorm", "condition": "visit"}
+    ]
+}

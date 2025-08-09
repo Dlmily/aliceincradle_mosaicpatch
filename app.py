@@ -299,7 +299,7 @@ def game():
     current_scene_id = game_state['current_scene']
     current_scene = get_scene(current_scene_id)
     
-    is_gryffindor_dorm = current_scene_id == 'dormitory'
+    is_gryffindor_dorm = str(current_scene_id).startswith('dormitory')
     
     event_message = None
     if 'last_scene' not in game_state or game_state['last_scene'] != current_scene_id:
@@ -380,13 +380,57 @@ def choose():
 
     # 分院场景：在选择时随机分配学院
     if current_scene_id == 'sorting' and not game_state['character'].get('house'):
+        # 记录分院前的上限
+        old_caps = compute_stat_caps(game_state)
         assigned = random.choice(HOUSES)
         game_state['character']['house'] = assigned
-        session['action_event'] = f"分院结果：你被分到{assigned}！"
-        # 分院后解锁宿舍、礼堂等基础场景
-        for sid in ['dormitory', 'great_hall', 'corridor']:
+        
+        # 计算分院后的上限，并根据上限提升进行即时回满/重置
+        new_caps = compute_stat_caps(game_state)
+        refill_msgs = []
+        if new_caps.get('health', 0) > old_caps.get('health', 0):
+            game_state['stats']['health'] = new_caps['health']
+            refill_msgs.append('生命值已回满')
+        if new_caps.get('san', 0) > old_caps.get('san', 0):
+            game_state['stats']['san'] = new_caps['san']
+            refill_msgs.append('理智值已回满')
+        if new_caps.get('fatigue', 0) > old_caps.get('fatigue', 0):
+            # 本游戏中疲劳值越低越好，提升上限后将疲劳重置为0
+            game_state['stats']['fatigue'] = 0
+            refill_msgs.append('疲劳值已重置')
+        
+        # 学院专属宿舍场景映射
+        dorm_map = {
+            '格兰芬多': 'dormitory',
+            '斯莱特林': 'dormitory_slytherin',
+            '拉文克劳': 'dormitory_ravenclaw',
+            '赫奇帕奇': 'dormitory_hufflepuff'
+        }
+        dorm_id = dorm_map.get(assigned, 'dormitory')
+        
+        # 分院后解锁宿舍、礼堂等基础场景，并直接前往对应宿舍
+        for sid in [dorm_id, 'great_hall', 'corridor']:
             if sid not in game_state['unlocked_scenes']:
                 game_state['unlocked_scenes'].append(sid)
+        # 覆盖当前选项的下一场景为对应宿舍
+        try:
+            choice['next'] = dorm_id
+        except Exception:
+            pass
+        
+        # 学院加成说明
+        if assigned == '格兰芬多':
+            bonus_msg = '随机战斗/对话/解锁事件概率+10%，疲劳上限+20'
+        elif assigned == '斯莱特林':
+            bonus_msg = '造成伤害+10%，获得加隆/西可/纳特时随机+0~10'
+        elif assigned == '拉文克劳':
+            bonus_msg = '获得新咒语概率+10%，炼药成功概率+10%，理智上限+20'
+        elif assigned == '赫奇帕奇':
+            bonus_msg = '好感度提升+10%，理智减少与疲劳增加降低15%，生命上限+20'
+        else:
+            bonus_msg = ''
+        refill_tail = ('；' + '，'.join(refill_msgs)) if refill_msgs else ''
+        session['action_event'] = f"分院结果：你被分到{assigned}！学院加成：{bonus_msg}{refill_tail}"
 
     if choice.get('type') == 'talk':
         talk_id = random.choice(choice['talk_files'])
