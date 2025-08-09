@@ -296,12 +296,21 @@ function showTab(tabId) {
 }
 
 function updateStats(stats, equipment) {
-    document.querySelector('.stat-value[style*="health"]').style.width = `${stats.health}%`;
-    document.querySelector('.stat-number:not(:nth-child(2)):not(:nth-child(3))').textContent = `${stats.health}/100`;
-    document.querySelector('.stat-value[style*="san"]').style.width = `${stats.san}%`;
-    document.querySelector('.stat-number:nth-child(2)').textContent = `${stats.san}/100`;
-    document.querySelector('.stat-value[style*="fatigue"]').style.width = `${stats.fatigue}%`;
-    document.querySelector('.stat-number:nth-child(3)').textContent = `${stats.fatigue}/100`;
+    const maxHealth = stats.max_health || 100;
+    const maxSan = stats.max_san || 100;
+    const maxFatigue = stats.max_fatigue || 100;
+    const hBar = document.querySelector('.stat .stat-bar .stat-value[style*="#c41e3a"]');
+    if (hBar) hBar.style.width = `${(stats.health / maxHealth) * 100}%`;
+    const hNum = document.querySelector('.stat .stat-number');
+    if (hNum) hNum.textContent = `${stats.health}/${maxHealth}`;
+    const sBar = document.querySelector('.stat .stat-bar .stat-value[style*="#1e90ff"]');
+    if (sBar) sBar.style.width = `${(stats.san / maxSan) * 100}%`;
+    const sNum = document.querySelectorAll('.stat .stat-number')[1];
+    if (sNum) sNum.textContent = `${stats.san}/${maxSan}`;
+    const fBar = document.querySelector('.stat .stat-bar .stat-value[style*="#ffd700"]');
+    if (fBar) fBar.style.width = `${(stats.fatigue / maxFatigue) * 100}%`;
+    const fNum = document.querySelectorAll('.stat .stat-number')[2];
+    if (fNum) fNum.textContent = `${stats.fatigue}/${maxFatigue}`;
     const galleons = document.getElementById('galleons-stat');
     if (galleons) galleons.textContent = `加隆: ${stats.galleons}`;
     const sickle = document.getElementById('sickle-stat');

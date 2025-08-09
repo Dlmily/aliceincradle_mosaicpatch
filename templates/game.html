@@ -23,40 +23,43 @@
                     <span class="stat-label">性别: {{ character.gender }}</span>
                 </div>
                 <div class="stat">
+                    <span class="stat-label" id="house-label">学院: {{ character.house or '未分院' }}</span>
+                </div>
+                <div class="stat">
                     <span class="stat-label">年级: {{ game_state.grade }}</span>
                 </div>
                 <div class="stat">
                     <span class="stat-label">生命值:</span>
                     <div class="stat-bar">
-                        <div class="stat-value" style="width: {{ stats.health }}%;"></div>
+                        <div id="health-bar" class="stat-value" style="width: {{ (stats.health / caps.health) * 100 }}%;"></div>
                     </div>
-                    <span class="stat-number">{{ stats.health }}/100</span>
+                    <span id="health-number" class="stat-number">{{ stats.health }}/{{ caps.health }}</span>
                 </div>
                 <div class="stat">
                     <span class="stat-label">理智值:</span>
                     <div class="stat-bar">
-                        <div class="stat-value" style="width: {{ stats.san }}%;"></div>
+                        <div id="san-bar" class="stat-value" style="width: {{ (stats.san / caps.san) * 100 }}%;"></div>
                     </div>
-                    <span class="stat-number">{{ stats.san }}/100</span>
+                    <span id="san-number" class="stat-number">{{ stats.san }}/{{ caps.san }}</span>
                 </div>
                 <div class="stat">
                     <span class="stat-label">疲劳值:</span>
                     <div class="stat-bar">
-                        <div class="stat-value" style="width: {{ stats.fatigue }}%;"></div>
+                        <div id="fatigue-bar" class="stat-value" style="width: {{ (stats.fatigue / caps.fatigue) * 100 }}%;"></div>
                     </div>
-                    <span class="stat-number">{{ stats.fatigue }}/100</span>
+                    <span id="fatigue-number" class="stat-number">{{ stats.fatigue }}/{{ caps.fatigue }}</span>
                 </div>
                 <div class="stat">
-                    <span class="stat-label">加隆: {{ stats.galleons }}</span>
+                    <span class="stat-label" id="galleons-stat">加隆: {{ stats.galleons }}</span>
                 </div>
                 <div class="stat">
-                    <span class="stat-label">西可: {{ stats.sickle }}</span>
+                    <span class="stat-label" id="sickle-stat">西可: {{ stats.sickle }}</span>
                 </div>
                 <div class="stat">
-                    <span class="stat-label">纳特: {{ stats.knut }}</span>
+                    <span class="stat-label" id="knut-stat">纳特: {{ stats.knut }}</span>
                 </div>
                 <div class="stat">
-                    <span class="stat-label">时间: {{ stats.time }}</span>
+                    <span class="stat-label" id="time-stat">时间: {{ stats.time }}</span>
                 </div>
             </div>
             <div class="sidebar-section">

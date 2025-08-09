@@ -23,6 +23,9 @@
                     <span class="stat-label">性别: {{ character.gender }}</span>
                 </div>
                 <div class="stat">
+                    <span class="stat-label" id="house-label">学院: {{ character.house or '未分院' }}</span>
+                </div>
+                <div class="stat">
                     <span class="stat-label">年级: {{ game_state.grade }}</span>
                 </div>
                 <div class="stat">
