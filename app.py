@@ -215,7 +215,7 @@ def init_game_state(name, gender):
         'battle_log': [],
         'selected_skills': [],
         'dodge': False,
-        'defense': False,
+        'defense': 0,
         'persistent_damage': {'damage': 0, 'duration': 0},
         'buff': {'attack_boost': 0, 'duration': 0}
     }
@@ -346,6 +346,9 @@ def choose():
                             game_state['battle']['battle_log'] = []
                             game_state['battle']['selected_skills'] = []
                             game_state['battle']['dodge'] = False
+                            game_state['battle']['defense'] = 0
+                            game_state['battle']['persistent_damage'] = {'damage': 0, 'duration': 0}
+                            game_state['battle']['buff'] = {'attack_boost': 0, 'duration': 0}
                             session['game_state'] = game_state
                             return redirect(url_for('battle'))
                         else:
@@ -466,7 +469,7 @@ def battle_choose():
         game_state['battle'].update({
             'dodge': True,
             'selected_skills': [],
-            'defense': False,
+            'defense': 0,
             'persistent_damage': {'damage': 0, 'duration': 0},
             'buff': {'attack_boost': 0, 'duration': 0}
         })
@@ -487,7 +490,7 @@ def select_skills():
         game_state['battle'].update({
             'selected_skills': selected_skills,
             'dodge': False,
-            'defense': False,
+            'defense': 0,
             'persistent_damage': {'damage': 0, 'duration': 0},
             'buff': {'attack_boost': 0, 'duration': 0}
         })
@@ -522,15 +525,15 @@ def perform_battle_round():
             battle_log.append("你成功闪避了敌人的攻击！")
         else:
             battle_log.append("闪避失败！")
-            if game_state['battle']['defense']:
+            if game_state['battle']['defense'] > 0:
                 battle_log.append("你的防御屏障抵挡了攻击！")
-                game_state['battle']['defense'] = False
+                game_state['battle']['defense'] -= 1
             else:
                 apply_skill_effect(enemy_skill, player_stats)
     else:
-        if game_state['battle']['defense']:
+        if game_state['battle']['defense'] > 0:
             battle_log.append("你的防御屏障抵挡了攻击！")
-            game_state['battle']['defense'] = False
+            game_state['battle']['defense'] -= 1
         else:
             apply_skill_effect(enemy_skill, player_stats)
     
@@ -587,25 +590,44 @@ def apply_skill_effect(skill, target_stats):
 
 def apply_player_skill_effect(skill, enemy, grade, battle_log):
     game_state = session['game_state']
-    if skill.get('type') == 1:  # 伤害
-        damage = skill['effect'].get('damage', 10)
+    effect = skill.get('effect', {})
+    skill_type = skill.get('type')
+
+    if skill_type == 1:  # 伤害
+        if 'damage' not in effect:
+            battle_log.append(f"技能 {skill.get('name', '')} 缺少伤害数值定义")
+            return
+        damage = effect['damage']
         grade_bonus = grade * 0.05
         buff_bonus = game_state['battle']['buff']['attack_boost'] if game_state['battle']['buff']['duration'] > 0 else 0
         damage = int(damage * (1 + grade_bonus + buff_bonus))
         enemy['health'] -= damage
         battle_log.append(f"对 {enemy['name']} 造成了 {damage} 点伤害")
-    elif skill.get('type') == 2:  # 防御
-        game_state['battle']['defense'] = True
-        battle_log.append("你抵挡了下一次攻击！")
-    elif skill.get('type') == 3:  # 持续伤害
-        damage = skill['effect'].get('damage', 5)
-        duration = skill['effect'].get('duration', 3)
+
+    elif skill_type == 2:  # 防御（按回合数生效）
+        if 'defense' not in effect:
+            battle_log.append(f"技能 {skill.get('name', '')} 缺少防御数值定义")
+            return
+        turns = int(effect['defense'])
+        game_state['battle']['defense'] += max(0, turns)
+        battle_log.append(f"你获得了防御屏障，持续 {turns} 次攻击！")
+
+    elif skill_type == 3:  # 持续伤害
+        if 'damage' not in effect or 'duration' not in effect:
+            battle_log.append(f"技能 {skill.get('name', '')} 缺少持续伤害数值定义")
+            return
+        damage = effect['damage']
+        duration = effect['duration']
         game_state['battle']['persistent_damage'] = {'damage': damage, 'duration': duration}
         enemy['health'] -= damage
-        battle_log.append(f"对 {enemy['name']} 造成了 {damage} 点持续伤害")
-    elif skill.get('type') == 4:  # 增益
-        boost = skill['effect'].get('attack_boost', 0.2)
-        duration = skill['effect'].get('duration', 3)
+        battle_log.append(f"对 {enemy['name']} 造成了 {damage} 点持续伤害（并在接下来的 {duration} 回合持续生效）")
+
+    elif skill_type == 4:  # 增益
+        if 'attack_boost' not in effect or 'duration' not in effect:
+            battle_log.append(f"技能 {skill.get('name', '')} 缺少增益数值定义")
+            return
+        boost = effect['attack_boost']
+        duration = effect['duration']
         game_state['battle']['buff'] = {'attack_boost': boost, 'duration': duration}
         battle_log.append(f"你的攻击力增加了 {boost*100}%，持续 {duration} 回合！")
 
