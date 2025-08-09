@@ -445,8 +445,16 @@ def battle():
     if not game_state['battle']['enemy']:
         return redirect(url_for('game'))
     
+    # 兼容旧存档：确保存在 defense_bonus 结构
+    if 'defense_bonus' not in game_state['battle']:
+        game_state['battle']['defense_bonus'] = {'amount': 0, 'duration': 0}
+        session['game_state'] = game_state
+    
     enemy = game_state['battle']['enemy']
     battle_log = game_state['battle']['battle_log']
+    # 计算防御总值用于模板展示
+    temp_def = game_state['battle']['defense_bonus']['amount'] if game_state['battle']['defense_bonus']['duration'] > 0 else 0
+    defense_total = game_state['stats'].get('defense', 0) + temp_def
     
     return render_template('battle.html',
                          game_state=game_state,
@@ -459,7 +467,8 @@ def battle():
                          character=game_state['character'],
                          event_message=session.pop('action_event', None),
                          debug_mode=DEBUG_MODE,
-                         all_scene_ids=get_all_scene_ids())
+                         all_scene_ids=get_all_scene_ids(),
+                         defense_total=defense_total)
 
 # 处理战斗选择
 @app.route('/battle_choose', methods=['POST'])
@@ -508,6 +517,9 @@ def perform_battle_round():
     enemy = game_state['battle']['enemy']
     player_stats = game_state['stats']
     battle_log = game_state['battle']['battle_log']
+    # 兼容旧存档：确保存在 defense_bonus 结构
+    if 'defense_bonus' not in game_state['battle']:
+        game_state['battle']['defense_bonus'] = {'amount': 0, 'duration': 0}
     
     # 应用持续伤害
     if game_state['battle']['persistent_damage']['duration'] > 0:
@@ -552,11 +564,12 @@ def perform_battle_round():
             game_state['battle']['buff']['attack_boost'] = 0
 
     # 更新防御临时加成效果
-    if game_state['battle']['defense_bonus']['duration'] > 0:
-        game_state['battle']['defense_bonus']['duration'] -= 1
-        if game_state['battle']['defense_bonus']['duration'] == 0:
+    db = game_state['battle']['defense_bonus']
+    if db['duration'] > 0:
+        db['duration'] -= 1
+        if db['duration'] == 0:
             battle_log.append("防御加成已结束！")
-            game_state['battle']['defense_bonus']['amount'] = 0
+            db['amount'] = 0
     
     # 检查战斗结束
     if player_stats['health'] <= 0:
