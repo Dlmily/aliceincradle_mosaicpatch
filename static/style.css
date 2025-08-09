@@ -288,6 +288,21 @@ body {
     margin: 0 auto;
 }
 
+/* Talk page layout: keep dialogue text stacked, options as grid */
+.talk-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.dialogue-choice {
+    margin: 10px 0 6px;
+    font-weight: 600;
+    color: #f0e68c;
+}
+
 .choice-button {
     width: 100%;
     padding: 15px;
