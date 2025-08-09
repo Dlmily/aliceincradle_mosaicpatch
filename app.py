@@ -89,6 +89,26 @@ def load_achievements():
         achievements_cache = load_json_file(ACHIEVEMENTS_FILE)
     return achievements_cache
 
+# 新增：事件消息收集与弹出
+def add_event_message(message):
+    if not message:
+        return
+    messages = session.get('action_events', [])
+    if not isinstance(messages, list):
+        messages = [messages] if messages else []
+    messages.append(message)
+    session['action_events'] = messages
+
+def pop_event_messages():
+    messages = session.pop('action_events', None)
+    if not messages:
+        return []
+    if isinstance(messages, list):
+        return messages
+    if isinstance(messages, str):
+        return [messages]
+    return []
+
 def load_scenes():
     """加载所有场景"""
     global scenes_cache
@@ -332,7 +352,7 @@ def game():
                              containers=game_state['containers'],
                              equipment=game_state['equipment'],
                              character=game_state['character'],
-                             event_message=session.pop('action_event', None),
+                             event_messages=pop_event_messages(),
                              debug_mode=DEBUG_MODE,
                              debug_scenes=debug_scenes,
                              last_action=game_state.get('last_action'),
@@ -351,7 +371,7 @@ def game():
                          containers=game_state['containers'],
                          equipment=game_state['equipment'],
                          character=game_state['character'],
-                         event_message=session.pop('action_event', None),
+                         event_messages=pop_event_messages(),
                          debug_mode=DEBUG_MODE,
                          debug_scenes=debug_scenes,
                          last_action=game_state.get('last_action'),
@@ -382,8 +402,18 @@ def choose():
 
     # 分院场景：在选择时随机分配学院
     if current_scene_id == 'sorting' and not game_state['character'].get('house'):
+        # 上限提升：在分院前后对比并立即恢复
+        prev_caps = compute_stat_caps(game_state)
         assigned = random.choice(HOUSES)
         game_state['character']['house'] = assigned
+        new_caps = compute_stat_caps(game_state)
+        # 生命值与理智值回满；疲劳值恢复为0
+        if new_caps.get('health', 0) > prev_caps.get('health', 0):
+            game_state['stats']['health'] = new_caps['health']
+        if new_caps.get('san', 0) > prev_caps.get('san', 0):
+            game_state['stats']['san'] = new_caps['san']
+        if new_caps.get('fatigue', 0) > prev_caps.get('fatigue', 0):
+            game_state['stats']['fatigue'] = 0
 
         # 学院效果说明
         effects_map = {
@@ -402,7 +432,7 @@ def choose():
         dorm_id = dorm_map.get(assigned, 'dormitory')
 
         # 设置事件消息（包含学院效果说明）
-        session['action_event'] = f"分院结果：你被分到{assigned}！{effects_map.get(assigned, '')}"
+        add_event_message(f"分院结果：你被分到{assigned}！{effects_map.get(assigned, '')}")
 
         # 分院后解锁宿舍、礼堂等基础场景
         for sid in [dorm_id, 'great_hall', 'corridor']:
@@ -457,9 +487,9 @@ def choose():
                             session['game_state'] = game_state
                             return redirect(url_for('battle'))
                         else:
-                            session['action_event'] = f"未找到敌人：{enemy_name}"
+                            add_event_message(f"未找到敌人：{enemy_name}")
                     else:
-                        session['action_event'] = "随机事件中未指定敌人"
+                        add_event_message("随机事件中未指定敌人")
                 # 解锁场景
                 if 'unlock_scene' in event:
                     unlock_id = event['unlock_scene']
@@ -470,7 +500,7 @@ def choose():
                             title = get_scene(unlock_id).get('title', unlock_id)
                         except Exception:
                             title = unlock_id
-                        session['action_event'] = (action_event + '；' if action_event else '') + f"解锁了场景：{title}"
+                        add_event_message(f"解锁了场景：{title}")
                 # 处理其他事件（物品、效果等）
                 if 'effect' in event:
                     for key, value in event['effect'].items():
@@ -501,7 +531,7 @@ def choose():
                         for ach in achievements:
                             if ach['id'] == "collect_first_item" and ach['id'] not in game_state['achievements']:
                                 game_state['achievements'].append(ach['id'])
-                                session['action_event'] = f"成就解锁：{ach['name']}"
+                                add_event_message(f"成就解锁：{ach['name']}")
                 break
     
     if 'items' in choice:
@@ -520,7 +550,7 @@ def choose():
                     for ach in achievements:
                         if ach['id'] == "collect_first_item" and ach['id'] not in game_state['achievements']:
                             game_state['achievements'].append(ach['id'])
-                            session['action_event'] = f"成就解锁：{ach['name']}"
+                            add_event_message(f"成就解锁：{ach['name']}")
                 elif action == 'remove' and item in game_state['inventory']:
                     if game_state['inventory'][item] > quantity:
                         game_state['inventory'][item] -= quantity
@@ -566,13 +596,14 @@ def choose():
                     achievements = load_achievements()
                     for achievement in achievements:
                         if achievement['id'] == ach['id']:
-                            session['action_event'] = f"成就解锁：{achievement['name']}"
+                            add_event_message(f"成就解锁：{achievement['name']}")
                             break
     
-    if action_event or item_messages:
-        session['action_event'] = action_event or ""
-        if item_messages:
-            session['action_event'] = (action_event + " " if action_event else "") + "; ".join(item_messages)
+    # 聚合事件消息
+    if action_event:
+        add_event_message(action_event)
+    for msg in item_messages:
+        add_event_message(msg)
     
     session['game_state'] = game_state
     return redirect(url_for('game'))
@@ -609,7 +640,7 @@ def battle():
                          inventory=game_state['inventory'],
                          equipment=game_state['equipment'],
                          character=game_state['character'],
-                         event_message=session.pop('action_event', None),
+                         event_messages=pop_event_messages(),
                          debug_mode=DEBUG_MODE,
                          debug_scenes=debug_scenes,
                          caps=caps)
@@ -728,17 +759,17 @@ def perform_battle_round():
     elif enemy['health'] <= 0:
         battle_log.append(f"你击败了 {enemy['name']}！")
         for reward in enemy['rewards']:
-            if random.random() < reward['chance']:
+            chance = reward.get('chance', 1.0)
+            if random.random() <= chance:
                 item = reward['item']
-                quantity = reward['quantity']
-                game_state['inventory'][item] = game_state['inventory'].get(item, 0) + quantity
-                battle_log.append(f"获得了 {item} x{quantity}")
-                # 检查获得物品的成就
+                qty = reward.get('quantity', 1)
+                game_state['inventory'][item] = game_state['inventory'].get(item, 0) + qty
+                # 成就：首次获得物品
                 achievements = load_achievements()
                 for ach in achievements:
                     if ach['id'] == "collect_first_item" and ach['id'] not in game_state['achievements']:
                         game_state['achievements'].append(ach['id'])
-                        session['action_event'] = f"成就解锁：{ach['name']}"
+                        add_event_message(f"成就解锁：{ach['name']}")
         game_state['battle']['enemy'] = None
         game_state['current_scene'] = 'forbidden_forest'
 
@@ -941,7 +972,7 @@ def undo_action():
     if previous_state:
         session['game_state'] = previous_state
         session['game_state']['previous_state'] = None
-        session['action_event'] = "已回退到上一步"
+        add_event_message("已回退到上一步")
     
     return redirect(url_for('game'))
 
@@ -964,7 +995,7 @@ def navigate(scene_id):
                         achievements = load_achievements()
                         for achievement in achievements:
                             if achievement['id'] == ach['id']:
-                                session['action_event'] = f"成就解锁：{achievement['name']}"
+                                add_event_message(f"成就解锁：{achievement['name']}")
                                 break
         session['game_state'] = game_state
     
@@ -1159,7 +1190,7 @@ def gain_all_spells():
     for ach in achievements:
         if ach['id'] == "learn_first_spell" and ach['id'] not in game_state['achievements']:
             game_state['achievements'].append(ach['id'])
-            session['action_event'] = f"成就解锁：{ach['name']}"
+            add_event_message(f"成就解锁：{ach['name']}")
     
     session['game_state'] = game_state
     return jsonify({'message': '已获得所有咒语！'})
