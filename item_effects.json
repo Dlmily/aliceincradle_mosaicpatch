@@ -6,14 +6,14 @@
     },
     "学院袍": {
         "type": "wearable", 
-        "effect": {"magic": 5}, 
-        "message": "你穿上学院袍，感觉魔法更充沛了！",
+        "effect": {"defense": 1}, 
+        "message": "你穿上学院袍，感觉更安全了！",
         "slot": "body"
     },
     "魔杖": {
         "type": "wearable", 
-        "effect": {"magic": 10}, 
-        "message": "你挥舞魔杖，魔法力量增强！",
+        "effect": {"defense": 1}, 
+        "message": "你挥舞魔杖，姿势更标准，防护更稳！",
         "slot": "hand"
     },
     "魔法零食": {
@@ -21,20 +21,19 @@
         "effect": {"health": 5}, 
         "message": "你吃了一些魔法零食，体力恢复了！"
     },
-    }
     "月光草": {
         "type": "material",
-        "effect": {"magic": 3},
-        "message": "月光草在魔药中发出柔和的光芒"
+        "effect": {"defense": 1},
+        "message": "月光草在魔药中发出柔和的光芒，似乎能提升你的护身术"
     },
     "龙鳞": {
         "type": "material",
-        "effect": {"magic": 8},
+        "effect": {"defense": 2},
         "message": "龙鳞蕴含着强大的防护魔法"
     },
     "龙蛋": {
         "type": "special",
-        "effect": {"magic": 15},
-        "message": "龙蛋散发出温暖的生命能量！"
+        "effect": {"defense": 3},
+        "message": "龙蛋散发出温暖的生命能量，为你提供守护！"
     }
 }

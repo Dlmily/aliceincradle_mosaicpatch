@@ -217,7 +217,9 @@ def init_game_state(name, gender):
         'dodge': False,
         'defense': 0,
         'persistent_damage': {'damage': 0, 'duration': 0},
-        'buff': {'attack_boost': 0, 'duration': 0}
+        'buff': {'attack_boost': 0, 'duration': 0},
+        'defense_bonus': 0,
+        'defense_bonus_duration': 0
     }
     
     session['game_state'] = initial_state
@@ -349,6 +351,8 @@ def choose():
                             game_state['battle']['defense'] = 0
                             game_state['battle']['persistent_damage'] = {'damage': 0, 'duration': 0}
                             game_state['battle']['buff'] = {'attack_boost': 0, 'duration': 0}
+                            game_state['battle']['defense_bonus'] = 0
+                            game_state['battle']['defense_bonus_duration'] = 0
                             session['game_state'] = game_state
                             return redirect(url_for('battle'))
                         else:
@@ -555,6 +559,13 @@ def perform_battle_round():
         if game_state['battle']['buff']['duration'] == 0:
             battle_log.append("增益效果已结束！")
             game_state['battle']['buff']['attack_boost'] = 0
+
+    # 更新防御加成持续时间
+    if game_state['battle']['defense_bonus_duration'] > 0:
+        game_state['battle']['defense_bonus_duration'] -= 1
+        if game_state['battle']['defense_bonus_duration'] == 0:
+            battle_log.append("防御加成效果已结束！")
+            game_state['battle']['defense_bonus'] = 0
     
     # 检查战斗结束
     if player_stats['health'] <= 0:
@@ -584,9 +595,25 @@ def calculate_success_chance(player_stats):
     fatigue_penalty = player_stats['fatigue'] / 100.0
     return min(max(base_chance + san_bonus - fatigue_penalty, 0), 1)
 
+
+def get_effective_defense():
+    game_state = session['game_state']
+    base_defense = game_state['stats'].get('defense', 0)
+    bonus = game_state['battle'].get('defense_bonus', 0) if game_state.get('battle') else 0
+    return max(0, base_defense + bonus)
+
+
 def apply_skill_effect(skill, target_stats):
+    # 将敌人技能效果应用到玩家，考虑防御力减伤
     for stat, value in skill['effect'].items():
-        target_stats[stat] = min(max(target_stats[stat] + value, 0), 100)
+        if stat == 'health' and value < 0:
+            effective_defense = get_effective_defense()
+            reduction_ratio = min(0.8, 0.05 * effective_defense)
+            damage = -value
+            mitigated = int(round(damage * (1 - reduction_ratio)))
+            target_stats['health'] = min(max(target_stats['health'] - mitigated, 0), 100)
+        else:
+            target_stats[stat] = min(max(target_stats.get(stat, 0) + value, 0), 100)
 
 def apply_player_skill_effect(skill, enemy, grade, battle_log):
     game_state = session['game_state']
@@ -604,13 +631,15 @@ def apply_player_skill_effect(skill, enemy, grade, battle_log):
         enemy['health'] -= damage
         battle_log.append(f"对 {enemy['name']} 造成了 {damage} 点伤害")
 
-    elif skill_type == 2:  # 防御（按回合数生效）
-        if 'defense' not in effect:
-            battle_log.append(f"技能 {skill.get('name', '')} 缺少防御数值定义")
+    elif skill_type == 2:  # 防御（增加防御力，按回合数生效）
+        if 'defense' not in effect or 'duration' not in effect:
+            battle_log.append(f"技能 {skill.get('name', '')} 缺少防御数值或持续时间定义")
             return
-        turns = int(effect['defense'])
-        game_state['battle']['defense'] += max(0, turns)
-        battle_log.append(f"你获得了防御屏障，持续 {turns} 次攻击！")
+        defense_inc = int(effect['defense'])
+        duration = int(effect['duration'])
+        game_state['battle']['defense_bonus'] += max(0, defense_inc)
+        game_state['battle']['defense_bonus_duration'] = max(game_state['battle']['defense_bonus_duration'], duration)
+        battle_log.append(f"你的防御力提升了 {defense_inc}，持续 {duration} 回合！")
 
     elif skill_type == 3:  # 持续伤害
         if 'damage' not in effect or 'duration' not in effect:
@@ -790,12 +819,35 @@ def item_action():
             item_type = item_effects[item]['type']
             if item_type == 'consumable':
                 for stat, value in item_effects[item]['effect'].items():
-                    game_state['stats'][stat] = min(max(game_state['stats'][stat] + value, 0), 100)
+                    game_state['stats'][stat] = min(max(game_state['stats'].get(stat, 0) + value, 0), 100)
                 event_message = item_effects[item]['message']
                 if item in game_state['inventory']:
                     game_state['inventory'][item] -= 1
                     if game_state['inventory'][item] == 0:
                         del game_state['inventory'][item]
+            elif item_type == 'wearable':
+                slot = item_effects[item].get('slot')
+                if slot:
+                    # 卸下原物品（如果有）
+                    previous_item = game_state['equipment'].get(slot)
+                    if previous_item:
+                        # 将原物品放回背包
+                        game_state['inventory'][previous_item] = game_state['inventory'].get(previous_item, 0) + 1
+                        # 移除原物品属性影响
+                        prev_effect = item_effects.get(previous_item, {}).get('effect', {})
+                        for stat, value in prev_effect.items():
+                            game_state['stats'][stat] = min(max(game_state['stats'].get(stat, 0) - value, 0), 100)
+                    # 穿戴新物品
+                    game_state['equipment'][slot] = item
+                    # 扣除背包数量
+                    if item in game_state['inventory']:
+                        game_state['inventory'][item] -= 1
+                        if game_state['inventory'][item] == 0:
+                            del game_state['inventory'][item]
+                    # 应用新物品属性影响
+                    for stat, value in item_effects[item]['effect'].items():
+                        game_state['stats'][stat] = min(max(game_state['stats'].get(stat, 0) + value, 0), 100)
+                    event_message = item_effects[item]['message']
     
     session['game_state'] = game_state
     return jsonify({

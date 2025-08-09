@@ -306,7 +306,11 @@ function updateStats(stats, equipment) {
     document.querySelector('.stat:nth-child(5) .stat-label').textContent = `西可: ${stats.sickle}`;
     document.querySelector('.stat:nth-child(6) .stat-label').textContent = `纳特: ${stats.knut}`;
     document.querySelector('.stat:nth-child(7) .stat-label').textContent = `时间: ${stats.time}`;
-    document.querySelector('.stat:nth-child(8) .stat-label').textContent = `敌人血量: ${stats.enemy_health}/${stats.enemy_max_health}`;
+    const defenseLabel = document.getElementById('defense-stat');
+    if (defenseLabel && typeof stats.defense !== 'undefined') {
+        // battle stats may carry effective defense via server in future; currently compute from stats only here
+        defenseLabel.textContent = `防御力: ${stats.defense}`;
+    }
     document.querySelector('.inventory li:nth-child(1)').textContent = `手部: ${equipment.hand || '空'}`;
     document.querySelector('.inventory li:nth-child(2)').textContent = `身体: ${equipment.body || '空'}`;
 }
