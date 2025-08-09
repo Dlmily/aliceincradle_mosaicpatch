@@ -197,6 +197,8 @@ def init_game_state(name, gender):
     initial_state['stats']['knut'] = currency['knut']
     initial_state['known_spells'] = []
     initial_state['achievements'] = []  # 初始化成就列表
+    # 初始化好感度
+    initial_state['favor'] = {}
     
     # 新增：初始化防御力
     if 'defense' not in initial_state['stats']:
@@ -264,11 +266,14 @@ def game():
     session['game_state'] = game_state
     
     all_scene_ids = get_all_scene_ids()
-    
     if DEBUG_MODE:
         scene_ids_for_debug = all_scene_ids
     else:
         scene_ids_for_debug = [sid for sid in all_scene_ids if sid in game_state['unlocked_scenes']]
+    debug_scenes = [{
+        'id': sid,
+        'title': get_scene(sid).get('title', sid)
+    } for sid in scene_ids_for_debug]
     
     can_undo = game_state['previous_state'] is not None
     
@@ -285,7 +290,7 @@ def game():
                              character=game_state['character'],
                              event_message=session.pop('action_event', None),
                              debug_mode=DEBUG_MODE,
-                             all_scene_ids=scene_ids_for_debug,
+                             debug_scenes=debug_scenes,
                              last_action=game_state.get('last_action'),
                              current_scene_id=current_scene_id,
                              can_undo=can_undo,
@@ -303,7 +308,7 @@ def game():
                          character=game_state['character'],
                          event_message=session.pop('action_event', None),
                          debug_mode=DEBUG_MODE,
-                         all_scene_ids=scene_ids_for_debug,
+                         debug_scenes=debug_scenes,
                          last_action=game_state.get('last_action'),
                          current_scene_id=current_scene_id,
                          can_undo=can_undo,
@@ -453,6 +458,10 @@ def battle():
         game_state['battle']['defense_bonus'] = {'amount': 0, 'duration': 0}
         session['game_state'] = game_state
 
+    debug_scenes = [{
+        'id': sid,
+        'title': get_scene(sid).get('title', sid)
+    } for sid in get_all_scene_ids()]
     return render_template('battle.html',
                          game_state=game_state,
                          enemy=enemy,
@@ -464,7 +473,7 @@ def battle():
                          character=game_state['character'],
                          event_message=session.pop('action_event', None),
                          debug_mode=DEBUG_MODE,
-                         all_scene_ids=get_all_scene_ids())
+                         debug_scenes=debug_scenes)
 
 # 处理战斗选择
 @app.route('/battle_choose', methods=['POST'])
@@ -682,6 +691,20 @@ def talk_choose():
         for stat, value in chosen_option['effect'].items():
             current = game_state['stats'].get(stat, 0)
             game_state['stats'][stat] = min(max(current + value, 0), 100)
+    # 处理好感度变化
+    # 默认将当前节点中首个有 people 的角色作为本次对话的对象
+    speaker = None
+    for node_item in current_node:
+        if node_item.get('people'):
+            speaker = node_item['people']
+            break
+    # 允许在选项中通过 favor_delta 指定变化，通过 favor_people 指定对象
+    favor_delta = chosen_option.get('favor_delta')
+    favor_people = chosen_option.get('favor_people', speaker)
+    if favor_delta is not None and favor_people:
+        if 'favor' not in game_state:
+            game_state['favor'] = {}
+        game_state['favor'][favor_people] = game_state['favor'].get(favor_people, 0) + int(favor_delta)
     
     if next_node == 'end' or talk_data['dialogue'].get(next_node, [{}])[0].get('type') == 'end':
         next_scene = talk_data['dialogue'].get(next_node, [{}])[0].get('next_scene', 'corridor')
@@ -694,6 +717,34 @@ def talk_choose():
     game_state['current_talk_node'] = next_node
     session['game_state'] = game_state
     return redirect(url_for('game'))
+
+def favor_relation(score: int) -> str:
+    if score <= -20:
+        return '敌对'
+    if score < 0:
+        return '冷淡'
+    if score < 20:
+        return '普通'
+    if score < 50:
+        return '友好'
+    if score < 80:
+        return '亲近'
+    return '挚友'
+
+@app.route('/get_favor')
+def get_favor():
+    game_state = session['game_state']
+    favor_dict = game_state.get('favor', {}) or {}
+    result = []
+    for person, score in favor_dict.items():
+        result.append({
+            'person': person,
+            'score': score,
+            'relation': favor_relation(score)
+        })
+    # 固定排序：分数高的在前，名字次序其次
+    result.sort(key=lambda x: (-x['score'], x['person']))
+    return jsonify({'favor': result})
 
 @app.route('/undo')
 def undo_action():

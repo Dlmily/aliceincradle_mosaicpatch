@@ -298,7 +298,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
     };
-    
+
+    window.openFavorModal = function() {
+        document.getElementById('favorModal').style.display = 'block';
+        loadFavor();
+    };
+
+    window.loadFavor = function() {
+        fetch('/get_favor')
+            .then(res => res.json())
+            .then(data => {
+                const list = document.getElementById('favor-list');
+                list.innerHTML = '';
+                const arr = data.favor || [];
+                if (arr.length === 0) {
+                    list.innerHTML = '<div class="empty-message">你还没有与任何人建立关系</div>';
+                    return;
+                }
+                arr.forEach(entry => {
+                    const div = document.createElement('div');
+                    div.className = 'inventory-item';
+                    div.innerHTML = `
+                        <div class="item-icon">💬</div>
+                        <div class="item-name">${entry.person}</div>
+                        <div class="item-description">好感度：${entry.score}（关系：${entry.relation}）</div>
+                    `;
+                    list.appendChild(div);
+                });
+            });
+    };
+
     window.undoAction = function() {
         fetch('/undo')
             .then(response => response.text())

@@ -9,8 +9,8 @@
                 "type": "choice",
                 "question": "你要如何回应？",
                 "choices": [
-                    { "text": "询问更多关于密室的信息", "next": "1-2", "effect": {"fatigue": 10}},
-                    { "text": "礼貌地结束对话", "next": "end" }
+                    { "text": "询问更多关于密室的信息", "next": "1-2", "effect": {"fatigue": 10}, "favor_delta": 3 },
+                    { "text": "礼貌地结束对话", "next": "end", "favor_delta": -1 }
                 ]
             }
         ],
