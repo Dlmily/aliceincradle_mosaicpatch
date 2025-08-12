@@ -192,6 +192,81 @@ def get_all_scene_ids():
                 scene_ids.append(filename[:-5])
     return scene_ids
 
+# ========== 任务与事件检查：辅助函数 ==========
+def is_choice_visible(choice: dict, game_state: dict) -> bool:
+    """决定一个选项是否在界面上可见。
+    规则：
+    - requires_accepted_quest: 只有在已接受该任务时显示
+    - requires_not_accepted_quest: 只有在未接受该任务时显示
+    注意：像 requires_dorm_access / requires_flags 这类点击时检查的条件不用于隐藏，仅在点击时提示。
+    """
+    req_q = choice.get('requires_accepted_quest')
+    if req_q and req_q not in (game_state.get('quests') or {}):
+        return False
+    req_not_q = choice.get('requires_not_accepted_quest')
+    if req_not_q and req_not_q in (game_state.get('quests') or {}):
+        return False
+    return True
+
+def filter_scene_choices(scene: dict, game_state: dict) -> dict:
+    """基于可见性过滤场景中的 choices，返回浅拷贝。"""
+    if not scene or 'choices' not in scene:
+        return scene
+    scene_copy = copy.deepcopy(scene)
+    scene_copy['choices'] = [c for c in scene['choices'] if is_choice_visible(c, game_state)]
+    return scene_copy
+
+def accept_quest(game_state: dict, quest_def: dict):
+    """接受任务，quest_def: {id, title, desc}"""
+    if not quest_def:
+        return
+    qid = quest_def.get('id')
+    if not qid:
+        return
+    game_state.setdefault('quests', {})
+    if qid not in game_state['quests']:
+        game_state['quests'][qid] = {
+            'title': quest_def.get('title', qid),
+            'desc': quest_def.get('desc', '')
+        }
+
+def complete_quest(game_state: dict, quest_id: str):
+    if not quest_id:
+        return
+    if quest_id in (game_state.get('quests') or {}):
+        game_state.setdefault('completed_quests', [])
+        if quest_id not in game_state['completed_quests']:
+            game_state['completed_quests'].append(quest_id)
+        del game_state['quests'][quest_id]
+
+def check_choice_requirements(choice: dict, game_state: dict):
+    """在点击时检查前置条件。满足返回 (True, None)，否则 (False, fail_message)。"""
+    # 宿舍入口特殊检查：非拉文克劳需要口令；拉文克劳需要解谜
+    if choice.get('requires_dorm_access'):
+        house = (game_state.get('character') or {}).get('house')
+        flags = game_state.get('flags') or {}
+        if house == '拉文克劳':
+            if not flags.get('ravenclaw_riddle_answered'):
+                return False, choice.get('on_fail_message') or '拉文克劳的门环提出了一个谜语。你尚未解答，可先向本院级长请教。'
+        else:
+            if not flags.get('dorm_password_known'):
+                return False, choice.get('on_fail_message') or '你不知道宿舍入口的口令。请先向本院级长询问。'
+
+    # 通用旗标要求（点击时提示，不用于隐藏）
+    for f in choice.get('requires_flags', []) or []:
+        if not (game_state.get('flags') or {}).get(f):
+            return False, choice.get('on_fail_message') or '条件未满足'
+
+    # 任务要求（点击时二次校验）
+    req_q = choice.get('requires_accepted_quest')
+    if req_q and req_q not in (game_state.get('quests') or {}):
+        return False, choice.get('on_fail_message') or '你还未接受相关委托'
+    req_not_q = choice.get('requires_not_accepted_quest')
+    if req_not_q and req_not_q in (game_state.get('quests') or {}):
+        return False, choice.get('on_fail_message') or '该选项目前不可用'
+
+    return True, None
+
 # 计算物品总数
 def count_items(item_dict):
     return sum(item_dict.values()) if isinstance(item_dict, dict) and item_dict else 0
@@ -257,6 +332,10 @@ def init_game_state(name, gender):
     initial_state['achievements'] = []  # 初始化成就列表
     # 初始化好感度
     initial_state['favor'] = {}
+    # 初始化旗标与任务
+    initial_state['flags'] = {}
+    initial_state['quests'] = {}
+    initial_state['completed_quests'] = []
     
     # 新增：初始化防御力（默认5，上限50）
     if 'defense' not in initial_state['stats']:
@@ -318,6 +397,8 @@ def game():
     game_state = session['game_state']
     current_scene_id = game_state['current_scene']
     current_scene = get_scene(current_scene_id)
+    # 根据任务状态过滤可见选项
+    render_scene = filter_scene_choices(current_scene, game_state)
     
     is_gryffindor_dorm = current_scene_id == 'dormitory'
     
@@ -365,7 +446,7 @@ def game():
 
     return render_template('game.html',
                          game_state=game_state,
-                         scene=current_scene,
+                         scene=render_scene,
                          stats=game_state['stats'],
                          inventory=game_state['inventory'],
                          containers=game_state['containers'],
@@ -393,10 +474,13 @@ def choose():
     current_scene_id = game_state['current_scene']
     current_scene = get_scene(current_scene_id)
     
-    if choice_index < 0 or choice_index >= len(current_scene['choices']):
+    # 将前端展示的可见选项索引映射回原始 choices 索引
+    visible_indices = [i for i, c in enumerate(current_scene.get('choices', [])) if is_choice_visible(c, game_state)]
+    if choice_index < 0 or choice_index >= len(visible_indices):
         return redirect(url_for('game'))
+    real_index = visible_indices[choice_index]
     
-    choice = current_scene['choices'][choice_index]
+    choice = current_scene['choices'][real_index]
     # 默认下一场景为选项中的 next，可在分院时覆盖
     next_scene_id = choice.get('next', current_scene_id)
 
@@ -446,8 +530,64 @@ def choose():
         talk_id = random.choice(choice['talk_files'])
         game_state['current_talk'] = talk_id
         game_state['current_talk_node'] = '1-1'
+        # 若该对话标记为 love，则将相关角色纳入好感系统
+        try:
+            talk_data = get_talk(talk_id)
+            if talk_data.get('love'):
+                people_set = set()
+                for node in (talk_data.get('dialogue') or {}).values():
+                    for item in node:
+                        p = item.get('people')
+                        if p:
+                            people_set.add(p)
+                game_state.setdefault('favor', {})
+                for p in people_set:
+                    game_state['favor'].setdefault(p, 0)
+        except Exception:
+            pass
         session['game_state'] = game_state
         return redirect(url_for('game'))
+
+    # 动态宿舍跳转：根据学院决定 next
+    if choice.get('next_house_dorm'):
+        dorm_map = {
+            '格兰芬多': 'dormitory',
+            '斯莱特林': 'dormitory_slytherin',
+            '拉文克劳': 'dormitory_ravenclaw',
+            '赫奇帕奇': 'dormitory_hufflepuff'
+        }
+        next_scene_id = dorm_map.get(game_state['character'].get('house'), next_scene_id)
+
+    # 点击前置条件检查（事件检查系统）
+    ok, fail_msg = check_choice_requirements(choice, game_state)
+    if not ok:
+        add_event_message(fail_msg)
+        session['game_state'] = game_state
+        return redirect(url_for('game'))
+
+    # 旗标设置
+    for flag in (choice.get('set_flags') or []):
+        game_state.setdefault('flags', {})
+        game_state['flags'][flag] = True
+
+    # 从级长处获取宿舍口令/谜语：根据学院设置对应旗标
+    if choice.get('set_dorm_access_flag'):
+        house = game_state['character'].get('house')
+        game_state.setdefault('flags', {})
+        if house == '拉文克劳':
+            game_state['flags']['ravenclaw_riddle_answered'] = True
+            add_event_message('你向本院级长请教并成功解答了门环的谜语。')
+        else:
+            game_state['flags']['dorm_password_known'] = True
+            add_event_message('你从本院级长处得知了宿舍入口的口令。')
+
+    # 接受/完成任务
+    if choice.get('accept_quest'):
+        accept_quest(game_state, choice['accept_quest'])
+        add_event_message(f"已接受委托：{choice['accept_quest'].get('title', choice['accept_quest'].get('id'))}")
+    if choice.get('complete_quest'):
+        complete_quest(game_state, choice['complete_quest'])
+        add_event_message('委托已完成！')
     
     action_event = None
     item_messages = []
