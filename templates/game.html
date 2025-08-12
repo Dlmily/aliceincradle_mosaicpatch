@@ -63,6 +63,21 @@
                 </div>
             </div>
             <div class="sidebar-section">
+                <h3>委托/任务</h3>
+                <ul class="inventory">
+                    {% if game_state.quests and game_state.quests|length > 0 %}
+                        {% for qid, q in game_state.quests.items() %}
+                        <li>
+                            <div class="item-name">📜 {{ q.title }}</div>
+                            {% if q.desc %}<div class="item-description">{{ q.desc }}</div>{% endif %}
+                        </li>
+                        {% endfor %}
+                    {% else %}
+                        <li>当前无进行中的委托</li>
+                    {% endif %}
+                </ul>
+            </div>
+            <div class="sidebar-section">
                 <h3>装备</h3>
                 <ul class="inventory">
                     <li>手部: {% if equipment.hand %}{{ equipment.hand }}{% else %}空{% endif %}</li>

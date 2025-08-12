@@ -1,11 +1,11 @@
 {
     "title": "探索城堡",
-    "description": "你在霍格沃茨城堡的神秘走廊里探索。移动的楼梯、说话的画像和隐藏的通道让你既兴奋又有点紧张。",
+    "description": "你在城堡各处探索，偶尔能发现秘密通道与奇妙的房间。",
     "image": "explore.jpg",
     "choices": [
         {
-            "text": "前往图书馆",
-            "next": "library",
+            "text": "在走廊穿行",
+            "next": "corridor",
             "time": 10,
             "random_events": [
                 {"chance": 0.2, "event": "一幅画像给你指了条近路。", "effect": {"fatigue": -2}},
@@ -14,22 +14,24 @@
         },
         {
             "text": "寻找有求必应屋",
-            "next": "explore",
-            "time": 20,
+            "next": "roomofhelp",
+            "time": 15,
             "random_events": [
                 {"chance": 0.3, "event": "你感觉离有求必应屋很近了。", "effect": {"fatigue": 3}},
-                {
-                    "chance": 0.05,
-                    "event": "你意外发现了有求必应屋的入口！",
-                    "effect": {"fatigue": -10},
-                    "unlock_scene": "room_of_requirement"
-                }
+                {"chance": 0.2, "event": "你意外发现了有求必应屋的入口！", "next": "roomofhelp"}
             ]
         },
         {
-            "text": "去魁地奇球场",
+            "text": "前往厨房领取南瓜馅饼（委托物品）",
+            "next": "explore",
+            "time": 5,
+            "requires_accepted_quest": "pumpkin_pies",
+            "set_flags": ["got_pies"]
+        },
+        {
+            "text": "去魁地奇球场看看",
             "next": "quidditch",
-            "time": 15,
+            "time": 12,
             "random_events": [
                 {"chance": 0.2, "event": "你在路上遇到了伍德队长。", "effect": {"fatigue": -2}},
                 {"chance": 0.1, "event": "皮皮鬼试图阻止你通过。", "effect": {"health": -5}}

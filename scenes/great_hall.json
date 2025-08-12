@@ -1,36 +1,36 @@
 {
-    "title": "霍格沃茨大礼堂",
+    "title": "大礼堂",
     "description": "宏伟的大礼堂里，四个学院的桌子摆满食物。天花板被施了魔法，显示着外面的天空。猫头鹰们带着邮件飞来飞去。",
     "image": "great_hall.jpg",
     "choices": [
         {
-            "text": "吃早餐",
-            "next": "great_hall",
-            "time": 20,
-            "effect": {"health": 20},
-            "random_events": [
-                {"chance": 0.2, "event": "你收到家里寄来的糖果包裹！", "effect": {"health": 10}},
-                {"chance": 0.1, "event": "邓布利多校长对你微笑点头。", "effect": {"fatigue": -5}}
-            ]
-        },
-        {
-            "text": "与别人聊天",
+            "text": "与同学闲聊",
             "type": "talk",
             "talk_files": ["talk_1", "talk_2"],
-            "time": 15,
-            "next": "great_hall"
-        },
-        {
-            "text": "查看公告板",
+            "time": 5,
             "next": "great_hall",
-            "time": 10,
             "random_events": [
                 {"chance": 0.2, "event": "你发现了一个有趣的社团活动。", "effect": {"fatigue": -2}},
                 {"chance": 0.05, "event": "你看到自己的名字出现在学院杯加分名单上！", "effect": {"fatigue": -5}}
             ]
         },
         {
-            "text": "返回走廊",
+            "text": "接受委托：帮厨房取一篮南瓜馅饼",
+            "next": "great_hall",
+            "time": 2,
+            "requires_not_accepted_quest": "pumpkin_pies",
+            "accept_quest": {"id": "pumpkin_pies", "title": "取南瓜馅饼", "desc": "前往大礼堂旁的厨房，取一篮南瓜馅饼交给管事。"}
+        },
+        {
+            "text": "把南瓜馅饼交给管事（完成委托）",
+            "next": "great_hall",
+            "time": 2,
+            "requires_accepted_quest": "pumpkin_pies",
+            "requires_flags": ["got_pies"],
+            "complete_quest": "pumpkin_pies"
+        },
+        {
+            "text": "前往走廊",
             "next": "corridor",
             "time": 5,
             "random_events": [

@@ -46,6 +46,19 @@
             "talk_files": ["talk_1", "talk_2"],
             "time": 5,
             "next": "corridor"
+        },
+        {
+            "text": "询问本院级长宿舍入口（口令/谜语）",
+            "next": "corridor",
+            "time": 2,
+            "set_dorm_access_flag": true
+        },
+        {
+            "text": "回宿舍",
+            "next": "corridor",
+            "next_house_dorm": true,
+            "requires_dorm_access": true,
+            "on_fail_message": "你还无法进入宿舍。请先向本院级长询问口令或谜语答案。"
         }
     ]
 }
